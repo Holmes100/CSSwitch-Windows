@@ -425,17 +425,21 @@ fn repair_interrupted_transaction_in(dir: &std::path::Path) -> Result<Vec<String
     Ok(steps)
 }
 
+/// 修复成功的用户提示：只讲下一步动作，不出现机制术语（术语留在诊断包/日志里）。
+fn repair_summary(steps: &[String]) -> String {
+    if steps.is_empty() {
+        return "未发现需要修复的内容。如果「一键开始」仍失败，请点「导出诊断包」发给我们。".into();
+    }
+    format!(
+        "已清理上次启动的残留记录。\n下一步：① 完全退出 CSSwitch（托盘图标右键退出）② 重新打开 CSSwitch ③ 再点「一键开始」。\n如果再次失败，请点「导出诊断包」发给我们。"
+    )
+}
+
 /// 「诊断与支持」页的一键修复入口。
 #[tauri::command]
 pub(crate) fn repair_interrupted_transaction() -> Result<String, String> {
     let steps = repair_interrupted_transaction_in(&config::default_dir())?;
-    if steps.is_empty() {
-        return Ok("未发现需要修复的内容。".into());
-    }
-    Ok(format!(
-        "修复完成：{}。请完全退出并重新打开 CSSwitch，再点「一键开始」。",
-        steps.join("；")
-    ))
+    Ok(repair_summary(&steps))
 }
 
 #[cfg(test)]
@@ -527,6 +531,17 @@ mod tests {
         let again = super::repair_interrupted_transaction_in(&dir).unwrap();
         assert!(again.iter().all(|s| s.contains("无需")), "{again:?}");
         fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn repair_summary_is_user_friendly_and_free_of_mechanism_terms() {
+        let s = super::repair_summary(&["runtime_transaction 已置 null".into()]);
+        assert!(s.contains("已清理上次启动的残留记录"), "{s}");
+        assert!(s.contains("完全退出"), "{s}");
+        assert!(!s.contains("runtime_transaction"), "成功提示不应出现机制术语：{s}");
+        let empty = super::repair_summary(&[]);
+        assert!(empty.contains("未发现需要修复的内容"), "{empty}");
+        assert!(empty.contains("导出诊断包"), "{empty}");
     }
 
     #[test]

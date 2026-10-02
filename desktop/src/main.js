@@ -1623,6 +1623,39 @@ async function checkOneClickBoundary() {
   return true;
 }
 
+// 一键开始失败文案：后端错误码保持稳定（诊断包/反馈排障有价值），前端翻译成
+// 用户语言——发生了什么 → 数据安全 → 现在做什么；技术详情降为末行小字。
+// 未知错误原样透出（附阶段），不猜测。
+function friendlyStartError(r) {
+  const message = r.message || "";
+  const tech = message + "（阶段：" + (r.stage || "unknown") + "）";
+  if (/recovery_status=manual_recovery_required/.test(message)) {
+    return [
+      "上次启动没有完成，留下了一条未清理的启动记录，本次启动已暂停。",
+      "你的模型配置和登录数据不受影响。",
+      "修复方法：打开「诊断与支持」页，点「修复上次启动」→ 完全退出 CSSwitch（托盘图标右键退出）→ 重新打开 → 再点「一键开始」。",
+      "▸ 技术详情（反馈问题时附诊断包即可）：" + tech,
+    ].join("\n");
+  }
+  if (/recovery_status=cleanup_required/.test(message)) {
+    return [
+      "上次启动有残留记录需要清理，本次启动已暂停。",
+      "你的模型配置和登录数据不受影响。",
+      "修复方法：请直接再点一次「一键开始」，CSSwitch 会自动清理后重新启动；若仍失败，点「诊断与支持」页的「修复上次启动」。",
+      "▸ 技术详情（反馈问题时附诊断包即可）：" + tech,
+    ].join("\n");
+  }
+  if (r.recovery_status === "degraded") {
+    return [
+      "一键开始没有完成，已自动保留了安全现场。",
+      "你的模型配置和登录数据不受影响。",
+      "修复方法：请先点「全部停止」，再重新点「一键开始」；若仍失败，点「诊断与支持」页的「修复上次启动」。",
+      "▸ 技术详情（反馈问题时附诊断包即可）：" + tech,
+    ].join("\n");
+  }
+  return tech;
+}
+
 async function runOneClick(runtimeChoice) {
   if (runtimeChoice) {
     if (!runtimeChoiceActiveId || runtimeChoiceActiveId !== configState.active_id) {
@@ -1646,10 +1679,7 @@ async function runOneClick(runtimeChoice) {
       return;
     }
     if (r && r.status === "error") {
-      const recovery = r.recovery_status === "degraded"
-        ? "；刷新未完成，安全事务记录已保留，可修正问题后重试"
-        : "";
-      setMsg((r.message || "一键开始未完成") + recovery + "（阶段：" + (r.stage || "unknown") + "）", "err");
+      setMsg(friendlyStartError(r), "err");
       setBrowserFallback(r.fallback_url);
       await refreshStatus();
       return;

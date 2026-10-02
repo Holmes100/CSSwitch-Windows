@@ -5593,17 +5593,17 @@ pub(crate) fn deep_clean_sandbox_leftovers() -> String {
             }
         }
     }
-    let mut summary = String::from("容器与孤儿进程已清");
+    let mut summary = String::from("已清理残留的后台进程");
     if removed > 0 {
-        summary.push_str(&format!("、快照×{removed}"));
+        summary.push_str(&format!("、残留启动备份×{removed}"));
     }
     if kept_manifest {
-        summary.push_str("、存在待恢复事务清单，快照保留");
+        summary.push_str("、有正在恢复中的记录，启动备份保留");
     }
     if !failed.is_empty() {
-        summary.push_str(&format!("、删除失败：{}", failed.join("、")));
+        summary.push_str(&format!("、部分清理失败：{}", failed.join("、")));
     }
-    format!("清扫：{summary}")
+    format!("已顺带{summary}")
 }
 
 #[cfg(not(windows))]
