@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/csswitch-v0.8-ui-demo.gif" alt="CSSwitch v0.8 系列界面演示" width="942">
+  <img src="docs/assets/csswitch-windows-ui.png" alt="CSSwitch Windows 版界面" width="860">
 </p>
 
 ---
@@ -45,12 +45,6 @@
 | Provider 与模型 | 已支持 | 连接内置 Provider、中转站和自定义兼容端点，自由填写并严格映射 Science 使用的模型。 |
 | Skill | 已支持 | 查看当前 Science 组织中的 Skill，从本地包导入，或让 Agent 从准确的公开 GitHub URL 安装。 |
 | MCP | 即将支持 | v0.8.4 尚未提供面向用户的通用 MCP 添加、配置和运行管理；后续版本会继续完善。 |
-
-## 社区
-
-<p align="center">
-  <img src="docs/assets/wechat-group.jpg" alt="CSSwitch 社区微信群二维码" width="420">
-</p>
 
 ## 安装与启动
 
