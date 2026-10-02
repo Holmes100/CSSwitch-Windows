@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/csswitch-windows-ui.png" alt="CSSwitch Windows 版界面" width="860">
+  <img src="docs/assets/csswitch-windows-ui.gif" alt="CSSwitch Windows 版界面演示" width="860">
 </p>
 
 ---
