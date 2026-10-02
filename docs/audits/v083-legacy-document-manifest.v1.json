@@ -1,0 +1,373 @@
+{
+  "schema_version": 1,
+  "source_kind": "legacy-ignored-docs-allowlist",
+  "source_checkout": "/Users/superjj/ccproj/CSswitch",
+  "source_head": "512f4948f561d961a5bf1eeaf9b97ff57726cb90",
+  "source_tree": "c974a113572499acdc7bf0583b6011ec673f3d15",
+  "tracked_dirty_status": [
+    " M catalog/capabilities.v1.json",
+    " M desktop/src-tauri/Cargo.lock",
+    " M desktop/src-tauri/Cargo.toml",
+    " M desktop/src-tauri/src/commands/mod.rs",
+    " M desktop/src-tauri/src/commands/runtime.rs",
+    " M desktop/src-tauri/src/lib.rs",
+    " M desktop/src-tauri/src/runtime/capability_catalog.rs",
+    " M desktop/src-tauri/src/runtime/sandbox_session.rs",
+    " M desktop/src-tauri/src/runtime/science.rs",
+    " M scripts/launch-virtual-sandbox.sh",
+    " M test/installed_provider_matrix.py",
+    " M test/test_capability_catalog.py",
+    " M test/test_scripts.sh"
+  ],
+  "tracked_dirty_status_sha256": "c449ec3eaaab4c9db776cc0ce1f13da8e3c0a66459a55e49220719889300ec2d",
+  "candidate_count": 44,
+  "excluded_current_name_collisions": [
+    "docs/DEVELOPMENT.md",
+    "docs/README.md"
+  ],
+  "document_count": 42,
+  "selection_contract": {
+    "scope": "git ignored docs/**/*.md only",
+    "allowlist_is_exact": true,
+    "other_ignored_content_scanned": false,
+    "symlinks_special_files_foreign_owner_allowed": false
+  },
+  "documents": [
+    {
+      "path": "docs/architecture-boundaries.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "e09a9c15048e617fe981b7481fe837e38cda3dd94922693166f5493ead3fd5cb"
+    },
+    {
+      "path": "docs/architecture-review-map.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "85ec2887538005e6a2166050aacd5b147b080f5d9e6fef872c6129ff24deecc2"
+    },
+    {
+      "path": "docs/capability-catalog-design.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "715aa6413ef882fce49e968f657a19a7ca2edcf3cb227212174e00e5a46b1a41"
+    },
+    {
+      "path": "docs/dependency-analysis.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "f9c49431b0a2937961db1f5465a00fa4eebe7b40ec3b4e7999bfd94cd7a5d5d6"
+    },
+    {
+      "path": "docs/error-reporting-plan.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "fd55e1b0d74cfc3271a982294755ccf846a90245d8b9854d4b2e62f53ee684d5"
+    },
+    {
+      "path": "docs/github-release-page.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "386dd1adcb00ca2e5277eb9f70d622f063e402dfaa646372a9ba7dad570ac533"
+    },
+    {
+      "path": "docs/internal/2026-07-09-business-domain-and-s1-contract-freeze.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "abe7e49d2861172b455246f2832e60f949f41578c37fa19837788b2e8db39d5b"
+    },
+    {
+      "path": "docs/internal/ARCHITECTURE.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "68f65ba4a5ce4095583c44a1e56a2ef1c6b5a26e2fb598c7820adfb73776b7bf"
+    },
+    {
+      "path": "docs/internal/CURRENT_STATE.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "fc47c7652e996cefb9774c627cb3dd8ab2a5a0a055706660db26a0eee6a88950"
+    },
+    {
+      "path": "docs/known-issues.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "7f7eed55151aaca7064ef31cea4b2f178ce57b6ce9117bd9742c2c44624359ed"
+    },
+    {
+      "path": "docs/provider-capability-matrix.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "b089c6043063c2eaa4932147a50aaea4170df8837b6c0bbc6c90f8d66d0e6207"
+    },
+    {
+      "path": "docs/provider-support.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "d80e6dbb94696817e83e8e46fc391d707397ad1f4ba7400b7d6069d16b8897e5"
+    },
+    {
+      "path": "docs/reference-architectures.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "d4e3b3800f0991105df397d0e51bd458212fba768571a283dde7bb92f515933d"
+    },
+    {
+      "path": "docs/rust-provider-python-ectomy-plan.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "bad5b4ad1bb7187101ce11b8f85a27faa6724b22ba32377ed47d2f1f5df1da04"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-02-phase0-hardening.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "b58e19a6b4d509236618e8a337b5adb069b0aac17302e9407cc965af8e667aa7"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-03-deepseek-dsml-tooluse-shim.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "1430de9710517623c3acc0a07984b2e7dd135bb6423391544b1943173007af7a"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-03-idempotent-oauth-forge.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "eaab9acb5d1a95b510c0ec1ed083c5dbe011af842d08d7971bb3cde29ed4d21e"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-03-multi-profile-config.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "be771389941129a0018881e5d7f6732683269bda22706de212088325711f23bd"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-03-native-entry-and-config-visibility.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "c43b5add515cf5bbbae4b6f343e05ece582714e960e28d84bf11fbe2b67277b2"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-03-relay-presets-and-model-picker.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "4f493faf4196d70de76c41fd9378b8d09f8363c9291f0112a6e3559e6a755e9b"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-04-desktop-ux-slice-a.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "a03c8980a84e89429d1da97931288869e3772bf6a5742fd3b9d2554ada390cf4"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-04-relay-model-selection-and-claude-shell.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "7b1bd47ea801ae68f57de822924c105eb538202e1f7620b9786ebbf29a2c93c1"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-05-s0-acceptance-gate.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "750871723434a1498fa2b2e582bfd9a2b2a364905f69e4e726376d0c103d35fb"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-05-s1a-anthropic-compat-decoupling.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "48827b159ce8576e0578751ce00be9d67532c5b690d48c4af8bb3c86e8c2c9ca"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-05-s1b-rust-gateway-deepseek-off.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "c58c17545740cd10da102810dc644af77d22bb39ccfe2773e79fd654f126b5bb"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-06-lib-runtime-split.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "7e1dcb9edcabb219303be5883c10316efdde6c54df2c3312645f57f995e1fff8"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-06-s1-closeout-and-ui-contract.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "69e3a59fabba5a1d2c62501197bcbc4e3766285fca0e299bbc079790190c43a5"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-09-s1c-migration-map.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "4b30f529df28b50092598a71ca8565de55a65cebc7e8c697ed3e8418f3fdf1ae"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-02-csswitch-desktop-hardening-github-design.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "b568621225e412bcbb4cf236f171b5b1cdb84df6f5883196e0bdce9153632f86"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-03-deepseek-dsml-tooluse-shim-design.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "9c2f6366938dc7f8a411785badb87f15f57a80bd3664da7bcd2f94392cd4602f"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-03-idempotent-oauth-forge-design.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "80ed4fd92479034291e64a0f295eef5d585c7d2e1b5e6e564699102d876d3564"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-03-multi-profile-config-design.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "2ae7951a2202198f1da4758038ff99eab7e805538d6bc7434f4d79cb30764ed5"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-03-native-entry-and-config-visibility-design.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "44cc906798a13f9503bbab8b9a8a7eac1a49c1b0e159de402eb8691c75af3571"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-03-relay-presets-and-model-picker-design.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "6d0a987ea089cf199a6108a8658a05a93b84a478490ff200b04e2c57df402a1b"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-04-desktop-ux-cc-switch-alignment-design.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "dfce923bc9103c13d771845f5f0db199ad6fa2c302e2fe67334703aa7025185c"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-04-pr-triage-and-kimi-minimax-design.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "e8e4ae96cfd080bc4985b789337a7892f75d37eef005b33b5b3605fcf416dd90"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-04-relay-model-selection-and-claude-shell-design.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "8d11656cfbfb27e076db0479283d372d70c0d4d9888848882ce9f0aead998156"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-05-architecture-doc-design.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "3ebdf049b7f29d7d829fe5d2ee587f3599e644086fdb239b4bbeacbc2e471a25"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-05-s0-acceptance-gate-design.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "c064eb4e2b9538202250c0d9f775e230f00d365d716e0440a0f21e635dde3ad0"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-05-s1a-anthropic-compat-decoupling-design.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "025e7d50760c99eff22deb3b6d6d7fbdf46020d93e85c15a531f7dd815638a3d"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-05-s1b-rust-gateway-deepseek-off-design.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "3a63d480b8297225bf7db291d27c0f5ffac7a4c050128ba4dba9e283a39b9e9e"
+    },
+    {
+      "path": "docs/verified-facts.md",
+      "type": "regular",
+      "mode": "0644",
+      "owner_uid": 501,
+      "owner_name": "superjj",
+      "sha256": "2eb5e5075d4c63443286db1124a3209d240cbb061027506c37ac5d5eecf1940c"
+    }
+  ]
+}

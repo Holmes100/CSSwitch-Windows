@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://csswitch.local/schema/completion-seal.v1.schema.json",
+  "title": "Completion seal v1",
+  "$defs": {
+    "RunId": {"type": "string", "pattern": "^[0-9a-f]{32}(?![\\s\\S])", "minLength": 32, "maxLength": 32},
+    "Sha": {"type": "string", "pattern": "^[0-9a-f]{64}(?![\\s\\S])", "minLength": 64, "maxLength": 64},
+    "Path": {"type": "string", "pattern": "^(?!/)(?!.*[\\u0000-\\u001f\\u007f])(?!.*(?:^|/)(?:\\.|\\.\\.)(?:/|$))(?!.*(?:^|/)(?:/|$)).{1,240}$(?![\\s\\S])", "minLength": 1, "maxLength": 240},
+    "ArtifactRef": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {"path": {"$ref": "#/$defs/Path"}, "sha256": {"$ref": "#/$defs/Sha"}}}
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "run_id", "run_manifest", "source_snapshot_manifest", "evidence_manifest", "input_digest_set_sha256", "aggregate_decision", "runner_exit", "completed_at"],
+  "properties": {
+    "schema": {"const": "completion-seal.v1"},
+    "run_id": {"$ref": "#/$defs/RunId"},
+    "run_manifest": {"allOf": [{"$ref": "#/$defs/ArtifactRef"}, {"properties": {"path": {"const": "run-manifest.json"}}}]},
+    "source_snapshot_manifest": {"allOf": [{"$ref": "#/$defs/ArtifactRef"}, {"properties": {"path": {"const": "snapshot/source-snapshot-manifest.json"}}}]},
+    "evidence_manifest": {"allOf": [{"$ref": "#/$defs/ArtifactRef"}, {"properties": {"path": {"const": "evidence-manifest.json"}}}]},
+    "input_digest_set_sha256": {"$ref": "#/$defs/Sha"},
+    "aggregate_decision": {"enum": ["PASS", "BLOCKED", "FAIL"]},
+    "runner_exit": {"type": "integer", "minimum": 0, "maximum": 255},
+    "completed_at": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,9})?Z(?![\\s\\S])", "maxLength": 30}
+  }
+}

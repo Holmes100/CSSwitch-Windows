@@ -1,0 +1,25 @@
+{
+  "productName": "CSSwitch Test",
+  "identifier": "com.csswitch.test",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "CSSwitch Test",
+        "width": 920,
+        "height": 650.5,
+        "minWidth": 760,
+        "minHeight": 520,
+        "resizable": true,
+        "decorations": true,
+        "transparent": false,
+        "visible": true,
+        "center": true,
+        "focus": true
+      }
+    ]
+  },
+  "bundle": {
+    "targets": ["app"]
+  }
+}

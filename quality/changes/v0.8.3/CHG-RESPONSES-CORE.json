@@ -1,0 +1,69 @@
+{
+  "schema": "change-record.v1",
+  "change": {
+    "id": "CHG-RESPONSES-CORE",
+    "version": "v0.8.3",
+    "title": "Register bounded OpenAI Responses core contract",
+    "summary": "Registers separate text, two-turn, and function-tools rows for issue 56; no provider or protocol fix is claimed by this record.",
+    "status": "active",
+    "owner": "gateway",
+    "changed_paths": [
+      "quality/bugs/BUG-083-RESPONSES-CORE.json",
+      "quality/requirements.v1.json",
+      "quality/release-gates.v1.json",
+      "quality/core-contract-matrix.v1.json",
+      "desktop/gateway/src/openai_responses.rs",
+      "test/test_gateway_rust.py",
+      "test/test_installed_provider_matrix.py"
+    ],
+    "requirement_ids": [
+      "REQ-083-RESPONSES-CORE",
+      "REQ-083-EVIDENCE"
+    ],
+    "bug_ids": [
+      "BUG-083-RESPONSES-CORE"
+    ],
+    "test_impact": {
+      "kind": "add",
+      "required_suite_ids": [
+        "SUITE-QUALITY-METADATA",
+        "SUITE-QUALITY-FOCUSED",
+        "SUITE-QUALITY-INVENTORY",
+        "SUITE-RUST-GATEWAY",
+        "SUITE-PY-LOOPBACK"
+      ],
+      "required_gate_ids": [
+        "GATE-QUALITY-META",
+        "GATE-QUALITY-PR",
+        "GATE-QUALITY-RELEASE",
+        "GATE-SOURCE",
+        "GATE-RESPONSES-CORE"
+      ],
+      "risk_classes": [
+        "P1",
+        "release-gate",
+        "source-only"
+      ]
+    },
+    "claim_state": "confirmed",
+    "evidence_boundary": {
+      "allowed_layers": [
+        "source-test"
+      ],
+      "excluded_layers": [
+        "isolated-test-app",
+        "final-dmg",
+        "installed-final",
+        "live",
+        "signing",
+        "public"
+      ],
+      "basis": [
+        "contract registration only",
+        "current-target rows not run"
+      ]
+    },
+    "does_not_claim_fix": true,
+    "retirement": null
+  }
+}

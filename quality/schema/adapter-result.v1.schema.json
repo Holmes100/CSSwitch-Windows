@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://csswitch.local/schema/adapter-result.v1.schema.json",
+  "title": "CSSwitch run evidence adapter result v1",
+  "oneOf": [
+    {"$ref": "#/$defs/Pass"},
+    {"$ref": "#/$defs/Failure"},
+    {"$ref": "#/$defs/Environment"},
+    {"$ref": "#/$defs/RealMachine"},
+    {"$ref": "#/$defs/Ignored"},
+    {"$ref": "#/$defs/Skipped"},
+    {"$ref": "#/$defs/Readiness"}
+  ],
+  "$defs": {
+    "RunId": {"type": "string", "pattern": "^[0-9a-f]{32}(?![\\s\\S])", "minLength": 32, "maxLength": 32},
+    "SuiteId": {"type": "string", "pattern": "^SUITE-[A-Z0-9][A-Z0-9-]{0,31}(?![\\s\\S])", "maxLength": 38},
+    "EntrypointId": {"type": "string", "pattern": "^ENTRY-[A-Z0-9][A-Z0-9-]{0,31}(?![\\s\\S])", "maxLength": 38},
+    "Common": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "run_id", "suite_id", "entrypoint_id", "attempt_index", "outcome_hint", "classification_hint", "reason_code"],
+      "properties": {
+        "schema": {"const": "adapter-result.v1"},
+        "run_id": {"$ref": "#/$defs/RunId"},
+        "suite_id": {"$ref": "#/$defs/SuiteId"},
+        "entrypoint_id": {"$ref": "#/$defs/EntrypointId"},
+        "attempt_index": {"type": "integer", "minimum": 0, "maximum": 1},
+        "outcome_hint": {"type": "string", "enum": ["PASS", "FAIL", "ENV-BLOCKED", "NEEDS-REAL-MACHINE", "IGNORED", "SKIPPED", "TIMEOUT"]},
+        "classification_hint": {"type": "string", "enum": ["NONE", "READINESS_TIMEOUT"]},
+        "reason_code": {"type": "string", "enum": ["NONE", "ASSERTION_FAILED", "ENVIRONMENT", "REAL_MACHINE_REQUIRED", "ADAPTER_REPORTED_IGNORED", "ADAPTER_REPORTED_SKIPPED", "READINESS_TIMEOUT"]}
+      }
+    },
+    "Pass": {"allOf": [{"$ref": "#/$defs/Common"}, {"properties": {"outcome_hint": {"const": "PASS"}, "classification_hint": {"const": "NONE"}, "reason_code": {"const": "NONE"}}}]},
+    "Failure": {"allOf": [{"$ref": "#/$defs/Common"}, {"properties": {"outcome_hint": {"const": "FAIL"}, "classification_hint": {"const": "NONE"}, "reason_code": {"const": "ASSERTION_FAILED"}}}]},
+    "Environment": {"allOf": [{"$ref": "#/$defs/Common"}, {"properties": {"outcome_hint": {"const": "ENV-BLOCKED"}, "classification_hint": {"const": "NONE"}, "reason_code": {"const": "ENVIRONMENT"}}}]},
+    "RealMachine": {"allOf": [{"$ref": "#/$defs/Common"}, {"properties": {"outcome_hint": {"const": "NEEDS-REAL-MACHINE"}, "classification_hint": {"const": "NONE"}, "reason_code": {"const": "REAL_MACHINE_REQUIRED"}}}]},
+    "Ignored": {"allOf": [{"$ref": "#/$defs/Common"}, {"properties": {"outcome_hint": {"const": "IGNORED"}, "classification_hint": {"const": "NONE"}, "reason_code": {"const": "ADAPTER_REPORTED_IGNORED"}}}]},
+    "Skipped": {"allOf": [{"$ref": "#/$defs/Common"}, {"properties": {"outcome_hint": {"const": "SKIPPED"}, "classification_hint": {"const": "NONE"}, "reason_code": {"const": "ADAPTER_REPORTED_SKIPPED"}}}]},
+    "Readiness": {"allOf": [{"$ref": "#/$defs/Common"}, {"properties": {"outcome_hint": {"const": "TIMEOUT"}, "classification_hint": {"const": "READINESS_TIMEOUT"}, "reason_code": {"const": "READINESS_TIMEOUT"}}}]}
+  }
+}

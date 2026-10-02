@@ -1,0 +1,16 @@
+pub mod anthropic_compat;
+pub(crate) mod anthropic_sse;
+pub mod auth;
+pub mod config;
+pub mod connect;
+pub mod dsml_shim;
+pub mod messages;
+pub mod models;
+pub mod openai_chat;
+pub mod openai_responses;
+pub mod policy;
+pub(crate) mod provider_contracts;
+pub mod science_control;
+pub mod server;
+pub mod skill_install;
+pub mod static_profile;

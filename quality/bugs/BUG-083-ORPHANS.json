@@ -1,0 +1,88 @@
+{
+  "schema": "bug-record.v1",
+  "bug": {
+    "id": "BUG-083-ORPHANS",
+    "version": "v0.8.3",
+    "title": "Four test entrypoints are outside the old gate inventory",
+    "summary": "The supplied audit identifies test_run_all_aggregator.sh, test_run_loopback_retry.sh, test_external_skill_install_bridge.py, and test_skill_runtime_boundary.py as orphaned from the existing gate.",
+    "status": "active",
+    "owner": "quality-kernel",
+    "severity": "P0",
+    "claim_state": "confirmed",
+    "reproduction_state": "inventory-confirmed",
+    "resolution_state": "open-not-fixed",
+    "affected_paths": [
+      "test/test_run_all_aggregator.sh",
+      "test/test_run_loopback_retry.sh",
+      "test/test_external_skill_install_bridge.py",
+      "test/test_skill_runtime_boundary.py"
+    ],
+    "requirement_ids": [
+      "REQ-083-INVENTORY",
+      "REQ-083-VALIDATOR",
+      "REQ-083-EVIDENCE"
+    ],
+    "change_ids": [
+      "CHG-QUALITY-KERNEL",
+      "CHG-SOURCE-GATE"
+    ],
+    "expected_suite_ids": [
+      "SUITE-QUALITY-INVENTORY",
+      "SUITE-ORPHAN-AGGREGATOR",
+      "SUITE-ORPHAN-RETRY",
+      "SUITE-ORPHAN-SKILL-BRIDGE",
+      "SUITE-ORPHAN-SKILL-BOUNDARY",
+      "SUITE-SOURCE-GATE-CONTRACT"
+    ],
+    "expected_gate_ids": [
+      "GATE-QUALITY-META",
+      "GATE-S0-LEGACY",
+      "GATE-SOURCE"
+    ],
+    "evidence_boundary": {
+      "allowed_layers": [
+        "source-test"
+      ],
+      "excluded_layers": [
+        "final-dmg",
+        "installed-final",
+        "live",
+        "signing",
+        "public"
+      ],
+      "basis": [
+        "docs/audits/v083-test-system-audit.md",
+        "current test file inventory"
+      ]
+    },
+    "reproduction": {
+      "state": "historical observed; source-gate regression versioned",
+      "steps": [
+        "Enumerate test entrypoint files and compare them with the old runner manifest.",
+        "Check that each orphan is represented in the quality catalog with a non-PASS expected status."
+      ],
+      "observed": "The two executable Python orphans are required GATE-SOURCE suites; the historical aggregator and retry self-tests are retired into SUITE-SOURCE-GATE-CONTRACT.",
+      "not_claimed": [
+        "final-dmg",
+        "installed-final",
+        "live",
+        "signing",
+        "public"
+      ]
+    },
+    "confirmed_facts": [
+      {
+        "statement": "The supplied audit names four test entrypoints outside the historical gate inventory.",
+        "evidence_ref": "docs/audits/v083-test-system-audit.md",
+        "verification_status": "confirmed"
+      },
+      {
+        "statement": "The two executable Python orphans are required GATE-SOURCE suites; the historical aggregator and retry self-tests are retired into SUITE-SOURCE-GATE-CONTRACT.",
+        "evidence_ref": "docs/operations/quality-source-gate.md",
+        "verification_status": "confirmed"
+      }
+    ],
+    "hypotheses": [],
+    "retirement": null
+  }
+}

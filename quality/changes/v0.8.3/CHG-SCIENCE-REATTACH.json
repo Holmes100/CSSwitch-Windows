@@ -1,0 +1,74 @@
+{
+  "schema": "change-record.v1",
+  "change": {
+    "id": "CHG-SCIENCE-REATTACH",
+    "version": "v0.8.3",
+    "title": "Repair Science identity-safe reattachment and stop closure",
+    "summary": "Records source-level red-green-mutation repair for managed reattachment, stop-success final-port proof, and atomic no-clobber receipt restoration. Product artifact/runtime closure is not claimed yet.",
+    "status": "active",
+    "owner": "science-runtime",
+    "changed_paths": [
+      "quality/bugs/BUG-083-SCIENCE-REATTACH.json",
+      "quality/requirements.v1.json",
+      "quality/release-gates.v1.json",
+      "quality/core-contract-matrix.v1.json",
+      "quality/test-catalog.v1.json",
+      "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+      "desktop/src-tauri/src/commands/runtime.rs",
+      "desktop/src-tauri/src/runtime/",
+      "test/test_process_ownership_policy.py",
+      "test/test_scripts.sh"
+    ],
+    "requirement_ids": [
+      "REQ-083-SCIENCE-REATTACH",
+      "REQ-083-EVIDENCE"
+    ],
+    "bug_ids": [
+      "BUG-083-SCIENCE-REATTACH"
+    ],
+    "test_impact": {
+      "kind": "add",
+      "required_suite_ids": [
+        "SUITE-QUALITY-METADATA",
+        "SUITE-QUALITY-FOCUSED",
+        "SUITE-QUALITY-INVENTORY",
+        "SUITE-RUST-DESKTOP",
+        "SUITE-SHELL-SCRIPTS"
+      ],
+      "required_gate_ids": [
+        "GATE-QUALITY-META",
+        "GATE-QUALITY-PR",
+        "GATE-QUALITY-RELEASE",
+        "GATE-SOURCE",
+        "GATE-SCIENCE-REATTACH"
+      ],
+      "risk_classes": [
+        "P0",
+        "security",
+        "release-gate",
+        "source-only"
+      ]
+    },
+    "claim_state": "confirmed",
+    "evidence_boundary": {
+      "allowed_layers": [
+        "source-test"
+      ],
+      "excluded_layers": [
+        "isolated-test-app",
+        "final-dmg",
+        "installed-final",
+        "live",
+        "signing",
+        "public"
+      ],
+      "basis": [
+        "source old-product red, product green, product-only mutation, restore green",
+        "fresh dual Science final review",
+        "isolated production artifact/runtime evidence pending"
+      ]
+    },
+    "does_not_claim_fix": true,
+    "retirement": null
+  }
+}

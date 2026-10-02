@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://csswitch.local/schema/change-set.v1.schema.json",
+  "title": "Change set v1",
+  "$defs": {
+    "GitSha": {"type": "string", "pattern": "^[0-9a-f]{40}(?![\\s\\S])", "minLength": 40, "maxLength": 40},
+    "Sha": {"type": "string", "pattern": "^[0-9a-f]{64}(?![\\s\\S])", "minLength": 64, "maxLength": 64},
+    "Path": {"type": "string", "pattern": "^(?!/)(?!.*[\\u0000-\\u001f\\u007f])(?!.*(?:^|/)(?:\\.|\\.\\.)(?:/|$))(?!.*(?:^|/)(?:/|$)).{1,240}$(?![\\s\\S])", "minLength": 1, "maxLength": 240}
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "head_sha", "raw_status_sha256", "created_at", "entries"],
+  "properties": {
+    "schema": {"const": "change-set.v1"},
+    "head_sha": {"$ref": "#/$defs/GitSha"},
+    "raw_status_sha256": {"$ref": "#/$defs/Sha"},
+    "created_at": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,9})?Z(?![\\s\\S])", "maxLength": 30},
+    "entries": {"type": "array", "maxItems": 4096, "items": {"type": "object", "additionalProperties": false, "required": ["path", "xy_status", "head_blob_sha", "index_blob_sha", "worktree_sha256", "mode", "size", "dev", "ino", "mtime_ns"], "properties": {"path": {"$ref": "#/$defs/Path"}, "xy_status": {"enum": [".M", "M.", "MM", "A.", "AM", "??"]}, "head_blob_sha": {"anyOf": [{"$ref": "#/$defs/GitSha"}, {"type": "null"}]}, "index_blob_sha": {"anyOf": [{"$ref": "#/$defs/GitSha"}, {"type": "null"}]}, "worktree_sha256": {"$ref": "#/$defs/Sha"}, "mode": {"enum": ["100644", "100755"]}, "size": {"type": "integer", "minimum": 0, "maximum": 67108864}, "dev": {"type": "integer", "minimum": 0}, "ino": {"type": "integer", "minimum": 0}, "mtime_ns": {"type": "integer", "minimum": 0}}}}
+  }
+}

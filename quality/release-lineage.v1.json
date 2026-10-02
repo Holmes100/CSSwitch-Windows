@@ -1,0 +1,15 @@
+{
+  "schema": "release-lineage.v1",
+  "version": "v0.8.3",
+  "audit_baseline_sha": "4e0af6ba7909dca22f1257b168172ecbe4af4836",
+  "previous_release": {
+    "tag": "v0.8.2",
+    "tag_object_sha": "3e54ed969163392c2e718d1af3c0035f16c757b6",
+    "peeled_sha": "0e740814c5cb30d7623757231ced882767f28a53"
+  },
+  "base_policy": {
+    "audit_baseline_is_not_release_base": true,
+    "pr_base": "explicit-target-ref-merge-base",
+    "release_base": "previous_release.peeled_sha"
+  }
+}

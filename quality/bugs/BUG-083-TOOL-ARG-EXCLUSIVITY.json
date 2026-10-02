@@ -1,0 +1,92 @@
+{
+  "schema": "bug-record.v1",
+  "bug": {
+    "id": "BUG-083-TOOL-ARG-EXCLUSIVITY",
+    "version": "v0.8.3",
+    "title": "Tool arguments can reach execution with mutually exclusive fields",
+    "summary": "A tool call has been observed with pages together with offset or limit. The repair must distinguish CSSwitch schema or reducer corruption from already-invalid upstream output and must never guess which field to delete.",
+    "status": "active",
+    "owner": "gateway",
+    "severity": "P0",
+    "claim_state": "confirmed",
+    "reproduction_state": "historical-observed",
+    "resolution_state": "open-not-fixed",
+    "affected_paths": [
+      "desktop/gateway/src/anthropic.rs",
+      "desktop/gateway/src/openai_chat.rs",
+      "desktop/gateway/src/openai_responses.rs",
+      "desktop/gateway/src/server.rs",
+      "test/test_gateway_rust.py"
+    ],
+    "requirement_ids": [
+      "REQ-083-TOOL-ARG-EXCLUSIVITY",
+      "REQ-083-EVIDENCE"
+    ],
+    "change_ids": [
+      "CHG-TOOL-ARG-EXCLUSIVITY"
+    ],
+    "expected_suite_ids": [
+      "SUITE-RUST-GATEWAY",
+      "SUITE-PY-LOOPBACK"
+    ],
+    "expected_gate_ids": [
+      "GATE-TOOL-ARG-EXCLUSIVITY",
+      "GATE-SOURCE"
+    ],
+    "evidence_boundary": {
+      "allowed_layers": [
+        "source-test"
+      ],
+      "excluded_layers": [
+        "isolated-test-app",
+        "final-dmg",
+        "installed-final",
+        "live",
+        "signing",
+        "public"
+      ],
+      "basis": [
+        "user-reported pages and offset/limit mutual-exclusion error",
+        "current-target red not established yet"
+      ]
+    },
+    "reproduction": {
+      "state": "historical-observed; exact current-target source red pending",
+      "steps": [
+        "Use a fixed original tool input schema in which pages conflicts with offset and limit.",
+        "Exercise schema conversion before upstream, streamed/done argument reduction, and already-invalid upstream output as three separate fixtures.",
+        "Assert that CSSwitch-originated corruption is repaired at its seam and upstream-invalid arguments are not forwarded to Science.",
+        "Assert a bounded typed protocol error and unchanged original schema; do not delete a field heuristically."
+      ],
+      "observed": "The reported failure says pages and offset/limit are mutually exclusive and may arise while converting a response to Anthropic tool-call form.",
+      "not_claimed": [
+        "isolated-test-app",
+        "final-dmg",
+        "installed-final",
+        "live",
+        "signing",
+        "public"
+      ]
+    },
+    "confirmed_facts": [
+      {
+        "statement": "The mutual-exclusion error text was reported by the user during v0.8.3 planning.",
+        "evidence_ref": ".agents/handoffs/CSswitch-v083-core-repair-document-governance-plan.md",
+        "verification_status": "confirmed"
+      }
+    ],
+    "hypotheses": [
+      {
+        "statement": "CSSwitch may corrupt the schema before upstream or corrupt arguments while merging stream and done events.",
+        "evidence_ref": "current-target source red pending",
+        "verification_status": "NOT-RUN"
+      },
+      {
+        "statement": "The upstream model may already have produced schema-invalid arguments that CSSwitch preserved exactly.",
+        "evidence_ref": "current-target source red pending",
+        "verification_status": "NOT-RUN"
+      }
+    ],
+    "retirement": null
+  }
+}

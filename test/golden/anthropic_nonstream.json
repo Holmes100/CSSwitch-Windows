@@ -1,0 +1,32 @@
+{
+  "basic": {
+    "body": "{\"id\": \"msg_mock\", \"type\": \"message\", \"role\": \"assistant\", \"model\": \"mock\", \"content\": [{\"type\": \"text\", \"text\": \"ok\"}], \"stop_reason\": \"end_turn\", \"stop_sequence\": null, \"usage\": {\"input_tokens\": 1, \"output_tokens\": 1}}",
+    "content_length": 220,
+    "content_type": "application/json",
+    "status": 200
+  },
+  "upstream_401": {
+    "body": "{\"type\": \"error\", \"error\": {\"type\": \"api_error\", \"message\": \"upstream 401: {\\\"type\\\": \\\"error\\\", \\\"error\\\": {\\\"type\\\": \\\"authentication_error\\\", \\\"message\\\": \\\"mock upstream error\\\"}}\"}}",
+    "content_length": 186,
+    "content_type": "application/json",
+    "status": 401
+  },
+  "upstream_429": {
+    "body": "{\"type\": \"error\", \"error\": {\"type\": \"api_error\", \"message\": \"upstream 429: {\\\"type\\\": \\\"error\\\", \\\"error\\\": {\\\"type\\\": \\\"authentication_error\\\", \\\"message\\\": \\\"mock upstream error\\\"}}\"}}",
+    "content_length": 186,
+    "content_type": "application/json",
+    "status": 429
+  },
+  "upstream_500_maps_502": {
+    "body": "{\"type\": \"error\", \"error\": {\"type\": \"api_error\", \"message\": \"upstream 500: {\\\"type\\\": \\\"error\\\", \\\"error\\\": {\\\"type\\\": \\\"authentication_error\\\", \\\"message\\\": \\\"mock upstream error\\\"}}\"}}",
+    "content_length": 186,
+    "content_type": "application/json",
+    "status": 502
+  },
+  "with_thinking": {
+    "body": "{\"id\": \"msg_mock\", \"type\": \"message\", \"role\": \"assistant\", \"model\": \"mock\", \"content\": [{\"type\": \"text\", \"text\": \"ok\"}], \"stop_reason\": \"end_turn\", \"stop_sequence\": null, \"usage\": {\"input_tokens\": 1, \"output_tokens\": 1}}",
+    "content_length": 220,
+    "content_type": "application/json",
+    "status": 200
+  }
+}

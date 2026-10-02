@@ -1,0 +1,758 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://csswitch.local/schema/quality-kernel.v1.schema.json",
+  "title": "CSSwitch quality kernel v1",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "RequirementId": {
+      "type": "string",
+      "pattern": "^REQ-[A-Z0-9][A-Z0-9-]{0,31}$",
+      "minLength": 5,
+      "maxLength": 36
+    },
+    "ChangeId": {
+      "type": "string",
+      "pattern": "^CHG-[A-Z0-9][A-Z0-9-]{0,31}$",
+      "minLength": 5,
+      "maxLength": 36
+    },
+    "BugId": {
+      "type": "string",
+      "pattern": "^BUG-[A-Z0-9][A-Z0-9-]{0,31}$",
+      "minLength": 5,
+      "maxLength": 36
+    },
+    "SuiteId": {
+      "type": "string",
+      "pattern": "^SUITE-[A-Z0-9][A-Z0-9-]{0,31}$",
+      "minLength": 7,
+      "maxLength": 38
+    },
+    "GateId": {
+      "type": "string",
+      "pattern": "^GATE-[A-Z0-9][A-Z0-9-]{0,31}$",
+      "minLength": 6,
+      "maxLength": 37
+    },
+    "CaseId": {
+      "type": "string",
+      "pattern": "^CASE-[A-Z0-9][A-Z0-9-]{0,31}$",
+      "minLength": 6,
+      "maxLength": 37
+    },
+    "AnyRecordId": {
+      "type": "string",
+      "pattern": "^(REQ|CHG|BUG|SUITE|GATE)-[A-Z0-9][A-Z0-9-]{0,31}$",
+      "minLength": 5,
+      "maxLength": 38
+    },
+    "Version": {
+      "type": "string",
+      "pattern": "^v[0-9]{1,4}\\.[0-9]{1,4}\\.[0-9]{1,4}([.-][A-Za-z0-9.-]{1,24})?$",
+      "minLength": 6,
+      "maxLength": 40
+    },
+    "GitSha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$",
+      "minLength": 40,
+      "maxLength": 40
+    },
+    "Date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "minLength": 10,
+      "maxLength": 10
+    },
+    "Path": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*(^|/)\\.\\.(?:/|$))(?!.*\\u0000)[^\\n]{1,200}$",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "Layer": {
+      "type": "string",
+      "enum": [
+        "source-test",
+        "isolated-test-app",
+        "final-dmg",
+        "installed-final",
+        "live",
+        "signing",
+        "public"
+      ]
+    },
+    "EvidenceBoundaryV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed_layers", "excluded_layers", "basis"],
+      "properties": {
+        "allowed_layers": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 7,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/Layer"}
+        },
+        "excluded_layers": {
+          "type": "array",
+          "maxItems": 7,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/Layer"}
+        },
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {"type": "string", "minLength": 1, "maxLength": 240}
+        }
+      }
+    },
+    "RetirementV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["retired_on", "reason", "replacement_id"],
+      "properties": {
+        "retired_on": {"$ref": "#/$defs/Date"},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 500},
+        "replacement_id": {"$ref": "#/$defs/AnyRecordId"}
+      }
+    },
+    "TestImpactV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "required_suite_ids", "required_gate_ids", "risk_classes"],
+      "properties": {
+        "kind": {"type": "string", "enum": ["add", "update", "existing-sufficient", "manual-evidence", "not-yet-automatable"]},
+        "required_suite_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/SuiteId"}
+        },
+        "required_gate_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/GateId"}
+        },
+        "risk_classes": {
+          "type": "array",
+          "maxItems": 12,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": ["P0", "P1", "security", "migration", "release-gate", "artifact", "source-only", "metadata"]
+          }
+        }
+      }
+    },
+    "EvidenceFactV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statement", "evidence_ref", "verification_status"],
+      "properties": {
+        "statement": {"type": "string", "minLength": 1, "maxLength": 500},
+        "evidence_ref": {"type": "string", "minLength": 1, "maxLength": 240},
+        "verification_status": {"const": "confirmed"}
+      }
+    },
+    "EvidenceHypothesisV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statement", "evidence_ref", "verification_status"],
+      "properties": {
+        "statement": {"type": "string", "minLength": 1, "maxLength": 500},
+        "evidence_ref": {"type": "string", "minLength": 1, "maxLength": 240},
+        "verification_status": {"type": "string", "enum": ["inferred", "unknown", "NOT-RUN"]}
+      }
+    },
+    "RequirementV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "title",
+        "description",
+        "status",
+        "owner",
+        "depends_on",
+        "acceptance_conditions",
+        "evidence_boundary"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/RequirementId"},
+        "version": {"$ref": "#/$defs/Version"},
+        "title": {"type": "string", "minLength": 1, "maxLength": 180},
+        "description": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "status": {"type": "string", "enum": ["active", "retired"]},
+        "owner": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{2,64}$"},
+        "depends_on": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/RequirementId"}
+        },
+        "acceptance_conditions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {"type": "string", "minLength": 1, "maxLength": 400}
+        },
+        "evidence_boundary": {"$ref": "#/$defs/EvidenceBoundaryV1"},
+        "retirement": {
+          "anyOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/RetirementV1"}
+          ]
+        }
+      }
+    },
+    "ChangeRecordV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "title",
+        "summary",
+        "status",
+        "owner",
+        "changed_paths",
+        "requirement_ids",
+        "bug_ids",
+        "test_impact",
+        "claim_state",
+        "evidence_boundary",
+        "does_not_claim_fix"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/ChangeId"},
+        "version": {"$ref": "#/$defs/Version"},
+        "title": {"type": "string", "minLength": 1, "maxLength": 180},
+        "summary": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "status": {"type": "string", "enum": ["active", "retired"]},
+        "owner": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{2,64}$"},
+        "changed_paths": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/Path"}
+        },
+        "requirement_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/RequirementId"}
+        },
+        "bug_ids": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/BugId"}
+        },
+        "test_impact": {"$ref": "#/$defs/TestImpactV1"},
+        "claim_state": {"type": "string", "enum": ["confirmed", "inferred", "unknown", "NOT-RUN"]},
+        "evidence_boundary": {"$ref": "#/$defs/EvidenceBoundaryV1"},
+        "does_not_claim_fix": {"type": "boolean"},
+        "retirement": {
+          "anyOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/RetirementV1"}
+          ]
+        }
+      }
+    },
+    "BugRecordV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "title",
+        "summary",
+        "status",
+        "owner",
+        "severity",
+        "claim_state",
+        "reproduction_state",
+        "resolution_state",
+        "affected_paths",
+        "requirement_ids",
+        "change_ids",
+        "expected_suite_ids",
+        "expected_gate_ids",
+        "evidence_boundary",
+        "reproduction",
+        "confirmed_facts",
+        "hypotheses",
+        "retirement"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/BugId"},
+        "version": {"$ref": "#/$defs/Version"},
+        "title": {"type": "string", "minLength": 1, "maxLength": 180},
+        "summary": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "status": {"type": "string", "enum": ["active", "retired"]},
+        "owner": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{2,64}$"},
+        "severity": {"type": "string", "enum": ["P0", "P1", "P2", "P3"]},
+        "claim_state": {"type": "string", "enum": ["confirmed", "inferred", "unknown", "NOT-RUN"]},
+        "reproduction_state": {
+          "type": "string",
+          "enum": ["historical-observed", "inventory-confirmed", "source-reproduced", "not-run-current-target", "manual-only", "unknown"]
+        },
+        "resolution_state": {
+          "type": "string",
+          "enum": ["open-not-fixed", "source-fixed-product-pending", "retired"]
+        },
+        "affected_paths": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/Path"}
+        },
+        "requirement_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/RequirementId"}
+        },
+        "change_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/ChangeId"}
+        },
+        "expected_suite_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/SuiteId"}
+        },
+        "expected_gate_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/GateId"}
+        },
+        "evidence_boundary": {"$ref": "#/$defs/EvidenceBoundaryV1"},
+        "confirmed_facts": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {"$ref": "#/$defs/EvidenceFactV1"}
+        },
+        "hypotheses": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {"$ref": "#/$defs/EvidenceHypothesisV1"}
+        },
+        "reproduction": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "steps", "observed", "not_claimed"],
+          "properties": {
+            "state": {"type": "string", "minLength": 1, "maxLength": 80},
+            "steps": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 12,
+              "items": {"type": "string", "minLength": 1, "maxLength": 300}
+            },
+            "observed": {"type": "string", "minLength": 1, "maxLength": 500},
+            "not_claimed": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 12,
+              "items": {"$ref": "#/$defs/Layer"}
+            }
+          }
+        },
+        "retirement": {
+          "anyOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/RetirementV1"}
+          ]
+        }
+      }
+    },
+    "SuiteV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "entrypoint",
+        "entrypoint_id", "command_argv", "cwd_mode", "profiles", "adapter_protocol", "timeout_seconds", "readiness_timeout_seconds", "retry_policy", "fixture_paths", "build_recipe_paths", "environment_allowlist",
+        "source_paths",
+        "evidence_layer",
+        "owner",
+        "status",
+        "reason",
+        "expiry",
+        "replacement_id",
+        "requirement_ids",
+        "bug_ids",
+        "gate_ids",
+        "expected_status",
+        "historical_case_ids",
+        "selection_rule"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/SuiteId"},
+        "name": {"type": "string", "minLength": 1, "maxLength": 180},
+        "kind": {"type": "string", "enum": ["python", "shell", "rust", "frontend", "inventory", "meta", "manual"]},
+        "category": {"type": "string", "enum": ["runner", "artifact", "host", "release"]},
+        "entrypoint": {"type": "string", "minLength": 1, "maxLength": 320},
+        "entrypoint_id": {"type": "string", "pattern": "^ENTRY-[A-Z0-9][A-Z0-9-]{0,31}$", "maxLength": 38},
+        "command_argv": {"type": "array", "maxItems": 64, "items": {"type": "string", "maxLength": 1024}},
+        "cwd_mode": {"const": "repo-root"},
+        "profiles": {"type": "array", "maxItems": 6, "items": {"enum": ["focused", "source", "host", "artifact", "acceptance", "release"]}},
+        "adapter_protocol": {"enum": ["adapter-result.v1", "source-observation.v1", "legacy"]},
+        "timeout_seconds": {"anyOf": [{"type": "integer", "minimum": 1, "maximum": 3600}, {"type": "null"}]},
+        "readiness_timeout_seconds": {"anyOf": [{"type": "integer", "minimum": 1, "maximum": 3600}, {"type": "null"}]},
+        "retry_policy": {"type": "string", "enum": ["none", "readiness-timeout-once"]},
+        "fixture_paths": {"type": "array", "maxItems": 24, "items": {"$ref": "#/$defs/Path"}},
+        "build_recipe_paths": {"type": "array", "maxItems": 24, "items": {"$ref": "#/$defs/Path"}},
+        "environment_allowlist": {"type": "array", "maxItems": 24, "items": {"type": "string", "maxLength": 128}},
+        "test_identity": {
+          "anyOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path", "sha256", "suite_key"],
+              "properties": {
+                "path": {"$ref": "#/$defs/Path"},
+                "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+                "suite_key": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9-]{0,63}$", "maxLength": 64}
+              }
+            }
+          ]
+        },
+        "source_paths": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/Path"}
+        },
+        "evidence_layer": {"const": "source-test"},
+        "owner": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{2,64}$"},
+        "status": {"type": "string", "enum": ["implemented", "active", "manual", "legacy", "quarantine", "not-yet-automatable", "retired"]},
+        "reason": {"anyOf": [{"type": "null"}, {"type": "string", "minLength": 1, "maxLength": 500}]},
+        "expiry": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/Date"}]},
+        "replacement_id": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/SuiteId"}]},
+        "requirement_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 24,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/RequirementId"}
+        },
+        "bug_ids": {
+          "type": "array",
+          "maxItems": 24,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/BugId"}
+        },
+        "gate_ids": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 12,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/GateId"}
+        },
+        "expected_status": {"type": "string", "enum": ["PASS", "FAIL", "FLAKY", "ENV-BLOCKED", "NOT-RUN", "IGNORED", "SKIPPED"]},
+        "historical_case_ids": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/CaseId"}
+        },
+        "selection_rule": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "include_paths", "exclude_statuses"],
+          "properties": {
+            "mode": {"type": "string", "enum": ["registered-only", "focused", "manual"]},
+            "include_paths": {
+              "type": "array",
+              "maxItems": 24,
+              "uniqueItems": true,
+              "items": {"$ref": "#/$defs/Path"}
+            },
+            "exclude_statuses": {
+              "type": "array",
+              "maxItems": 8,
+              "uniqueItems": true,
+              "items": {"type": "string", "enum": ["legacy", "manual", "quarantine", "retired", "not-yet-automatable"]}
+            }
+          }
+        },
+        "retirement": {
+          "anyOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/RetirementV1"}
+          ]
+        }
+      }
+    },
+    "TestSuiteCatalogV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "catalog_id", "version", "suites", "discovery_paths", "selection_rules"],
+      "properties": {
+        "schema": {"const": "test-catalog.v1"},
+        "catalog_id": {"$ref": "#/$defs/SuiteId"},
+        "version": {"$ref": "#/$defs/Version"},
+        "suites": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 96,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/SuiteV1"}
+        },
+        "discovery_paths": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 128,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/Path"}
+        },
+        "selection_rules": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "purpose", "suite_ids", "executor_implemented"],
+            "properties": {
+              "name": {"type": "string", "pattern": "^[a-z0-9-]{2,80}$"},
+              "purpose": {"type": "string", "minLength": 1, "maxLength": 400},
+              "suite_ids": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 64,
+                "uniqueItems": true,
+                "items": {"$ref": "#/$defs/SuiteId"}
+              },
+              "executor_implemented": {"type": "boolean"}
+            }
+          }
+        }
+      }
+    },
+    "ReleaseGateV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "name",
+        "profile",
+        "status",
+        "owner",
+        "reason",
+        "expiry",
+        "replacement_id",
+        "evidence_layer",
+        "required_suite_ids",
+        "required_requirement_ids",
+        "base_policy",
+        "requires_clean",
+        "requires_non_shallow",
+        "release_claim"
+        ,"candidate_policy"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/GateId"},
+        "version": {"$ref": "#/$defs/Version"},
+        "name": {"type": "string", "minLength": 1, "maxLength": 160},
+        "profile": {"type": "string", "enum": ["metadata", "impact-pr", "impact-release", "source", "product", "legacy"]},
+        "status": {"type": "string", "enum": ["active", "legacy-known-unreliable", "retired"]},
+        "owner": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{2,64}$"},
+        "reason": {"anyOf": [{"type": "null"}, {"type": "string", "minLength": 1, "maxLength": 500}]},
+        "expiry": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/Date"}]},
+        "replacement_id": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/GateId"}]},
+        "evidence_layer": {"const": "source-test"},
+        "required_suite_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/SuiteId"}
+        },
+        "required_requirement_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/RequirementId"}
+        },
+        "base_policy": {"type": "string", "enum": ["none", "target-ref-merge-base", "previous-release-peeled"]},
+        "requires_clean": {"type": "boolean"},
+        "requires_non_shallow": {"type": "boolean"},
+        "release_claim": {"type": "string", "enum": ["metadata-pass", "impact-covered", "source-green", "product-open-not-run", "legacy-known-unreliable"]},
+        "candidate_policy": {"type": "string", "enum": ["required", "optional", "excluded"]},
+        "retirement": {
+          "anyOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/RetirementV1"}
+          ]
+        }
+      }
+    },
+    "ReleaseLineageV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "version", "audit_baseline_sha", "previous_release", "base_policy"],
+      "properties": {
+        "schema": {"const": "release-lineage.v1"},
+        "version": {"$ref": "#/$defs/Version"},
+        "audit_baseline_sha": {"$ref": "#/$defs/GitSha"},
+        "previous_release": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["tag", "tag_object_sha", "peeled_sha"],
+          "properties": {
+            "tag": {"type": "string", "pattern": "^v[0-9]{1,4}\\.[0-9]{1,4}\\.[0-9]{1,4}$", "maxLength": 32},
+            "tag_object_sha": {"$ref": "#/$defs/GitSha"},
+            "peeled_sha": {"$ref": "#/$defs/GitSha"}
+          }
+        },
+        "base_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["audit_baseline_is_not_release_base", "pr_base", "release_base"],
+          "properties": {
+            "audit_baseline_is_not_release_base": {"const": true},
+            "pr_base": {"const": "explicit-target-ref-merge-base"},
+            "release_base": {"const": "previous_release.peeled_sha"}
+          }
+        }
+      }
+    },
+    "ProductionPathPolicyV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "version", "unknown_path_policy", "rename_delete_policy", "paths", "narrative_exemptions"],
+      "properties": {
+        "schema": {"const": "production-path-policy.v1"},
+        "version": {"$ref": "#/$defs/Version"},
+        "unknown_path_policy": {"const": "fail-closed"},
+        "rename_delete_policy": {"const": "fail-closed"},
+        "paths": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "kind", "owner", "requirement_ids", "required_suite_ids", "required_gate_ids"],
+            "properties": {
+              "path": {"$ref": "#/$defs/Path"},
+              "kind": {"type": "string", "enum": ["production-source", "test-runner", "fixture", "build-recipe", "quality-machine", "version-source", "release-workflow", "operational-doc"]},
+              "owner": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{2,64}$"},
+              "requirement_ids": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {"$ref": "#/$defs/RequirementId"}
+              },
+              "required_suite_ids": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 24,
+                "uniqueItems": true,
+                "items": {"$ref": "#/$defs/SuiteId"}
+              },
+              "required_gate_ids": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 8,
+                "uniqueItems": true,
+                "items": {"$ref": "#/$defs/GateId"}
+              }
+            }
+          }
+        },
+        "narrative_exemptions": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "reason", "owner"],
+            "properties": {
+              "path": {"$ref": "#/$defs/Path"},
+              "reason": {"type": "string", "minLength": 1, "maxLength": 400},
+              "owner": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{2,64}$"}
+            }
+          }
+        }
+      }
+    },
+    "RequirementsDocumentV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "version", "requirements"],
+      "properties": {
+        "schema": {"const": "requirements.v1"},
+        "version": {"$ref": "#/$defs/Version"},
+        "requirements": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {"$ref": "#/$defs/RequirementV1"}
+        }
+      }
+    },
+    "ChangeDocumentV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "change"],
+      "properties": {
+        "schema": {"const": "change-record.v1"},
+        "change": {"$ref": "#/$defs/ChangeRecordV1"}
+      }
+    },
+    "BugDocumentV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "bug"],
+      "properties": {
+        "schema": {"const": "bug-record.v1"},
+        "bug": {"$ref": "#/$defs/BugRecordV1"}
+      }
+    },
+    "ReleaseGatesDocumentV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "version", "gates"],
+      "properties": {
+        "schema": {"const": "release-gates.v1"},
+        "version": {"$ref": "#/$defs/Version"},
+        "gates": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {"$ref": "#/$defs/ReleaseGateV1"}
+        }
+      }
+    }
+  }
+}

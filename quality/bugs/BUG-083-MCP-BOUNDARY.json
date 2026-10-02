@@ -1,0 +1,25 @@
+{
+  "schema": "bug-record.v1",
+  "bug": {
+    "id": "BUG-083-MCP-BOUNDARY",
+    "version": "v0.8.3",
+    "title": "Local stdio MCP Acceptance and HTTPS boundary are not closed",
+    "summary": "The local stdio MCP Acceptance path and the HTTPS boundary are tracked as one product issue with separate evidence requirements; local loopback/mock behavior is not live HTTPS proof.",
+    "status": "active",
+    "owner": "gateway",
+    "severity": "P1",
+    "claim_state": "confirmed",
+    "reproduction_state": "historical-observed",
+    "resolution_state": "open-not-fixed",
+    "affected_paths": ["desktop/gateway/src/server.rs", "desktop/gateway/src/main.rs", "test/test_gateway_rust.py"],
+    "requirement_ids": ["REQ-083-MCP-BOUNDARY", "REQ-083-EVIDENCE"],
+    "change_ids": ["CHG-MCP-BOUNDARY"],
+    "expected_suite_ids": ["SUITE-PRODUCT-MCP", "SUITE-QUALITY-FOCUSED"],
+    "expected_gate_ids": ["GATE-MCP-BOUNDARY", "GATE-QUALITY-RELEASE"],
+    "evidence_boundary": {"allowed_layers": ["source-test"], "excluded_layers": ["final-dmg", "installed-final", "live", "signing", "public"], "basis": ["product issue registration", ".agents/rules/testing-and-evidence.md"]},
+    "reproduction": {"state": "historical-observed; remote HTTPS not run", "steps": ["Exercise local stdio MCP Acceptance with an isolated fixture.", "Keep loopback, TLS/HTTPS, and remote provider claims in separate evidence records."], "observed": "The local and HTTPS boundary remains an open product issue; no live MCP/provider claim is made.", "not_claimed": ["final-dmg", "installed-final", "live", "signing", "public"]},
+    "confirmed_facts": [{"statement": "The supplied product audit separates local stdio MCP Acceptance from the remote HTTPS boundary as an open issue.", "evidence_ref": "docs/audits/v082-change-audit.md", "verification_status": "confirmed"}],
+    "hypotheses": [],
+    "retirement": null
+  }
+}

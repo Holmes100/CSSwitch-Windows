@@ -1,0 +1,89 @@
+{
+  "schema": "bug-record.v1",
+  "bug": {
+    "id": "BUG-083-RUST-COVERAGE",
+    "version": "v0.8.3",
+    "title": "Four Cargo manifests and ignored Rust coverage are not closed upward",
+    "summary": "The supplied inventory calls for four Cargo manifests, records five omitted codex-network tests, and records skill-package 59 total with four ignored without a reliable gate aggregation.",
+    "status": "active",
+    "owner": "quality-kernel",
+    "severity": "P1",
+    "claim_state": "confirmed",
+    "reproduction_state": "inventory-confirmed",
+    "resolution_state": "open-not-fixed",
+    "affected_paths": [
+      "desktop/codex-network/Cargo.toml",
+      "desktop/gateway/Cargo.toml",
+      "desktop/skill-package/Cargo.toml",
+      "desktop/src-tauri/Cargo.toml",
+      "test/run-rust.sh"
+    ],
+    "requirement_ids": [
+      "REQ-083-INVENTORY",
+      "REQ-083-VALIDATOR",
+      "REQ-083-EVIDENCE"
+    ],
+    "change_ids": [
+      "CHG-QUALITY-KERNEL",
+      "CHG-SOURCE-GATE"
+    ],
+    "expected_suite_ids": [
+      "SUITE-QUALITY-INVENTORY",
+      "SUITE-RUST-CODEX-NETWORK",
+      "SUITE-RUST-GATEWAY",
+      "SUITE-RUST-SKILL-PACKAGE",
+      "SUITE-RUST-DESKTOP",
+      "SUITE-SOURCE-GATE-CONTRACT"
+    ],
+    "expected_gate_ids": [
+      "GATE-QUALITY-META",
+      "GATE-S0-LEGACY",
+      "GATE-SOURCE"
+    ],
+    "evidence_boundary": {
+      "allowed_layers": [
+        "source-test"
+      ],
+      "excluded_layers": [
+        "final-dmg",
+        "installed-final",
+        "live",
+        "signing",
+        "public"
+      ],
+      "basis": [
+        "docs/audits/v083-test-system-audit.md",
+        "Cargo.toml inventory"
+      ]
+    },
+    "reproduction": {
+      "state": "historical observed; source-gate regression versioned",
+      "steps": [
+        "Enumerate Cargo.toml files under desktop/.",
+        "Compare manifest entries and ignored counts with the legacy Rust runner."
+      ],
+      "observed": "GATE-SOURCE requires all four Cargo manifests and binds exact discovered identities plus the reviewed ignored-ID subsets.",
+      "not_claimed": [
+        "final-dmg",
+        "installed-final",
+        "live",
+        "signing",
+        "public"
+      ]
+    },
+    "confirmed_facts": [
+      {
+        "statement": "The supplied inventory identifies four desktop Cargo manifests and an upward Rust coverage gap.",
+        "evidence_ref": "docs/audits/v083-test-system-audit.md",
+        "verification_status": "confirmed"
+      },
+      {
+        "statement": "GATE-SOURCE requires all four Cargo manifests and binds exact discovered identities plus the reviewed ignored-ID subsets.",
+        "evidence_ref": "docs/operations/quality-source-gate.md",
+        "verification_status": "confirmed"
+      }
+    ],
+    "hypotheses": [],
+    "retirement": null
+  }
+}

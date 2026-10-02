@@ -1,0 +1,2133 @@
+{
+  "schema": "test-catalog.v1",
+  "catalog_id": "SUITE-CATALOG-V1",
+  "version": "v0.8.3",
+  "discovery_paths": [
+    "desktop/codex-network/Cargo.toml",
+    "desktop/gateway/Cargo.toml",
+    "desktop/skill-package/Cargo.toml",
+    "desktop/src-tauri/Cargo.toml",
+    "test/codex_auth_ui.test.mjs",
+    "test/model_catalog_state.test.mjs",
+    "test/profile_preview_mock.test.mjs",
+    "test/quality/test_quality_kernel.py",
+    "test/quality/test_run_evidence_aggregation_runner.py",
+    "test/quality/test_run_evidence_atomic_store.py",
+    "test/quality/test_run_evidence_attempt0_runner.py",
+    "test/quality/test_run_evidence_clean_commit_snapshot.py",
+    "test/quality/test_run_evidence_cli.py",
+    "test/quality/test_run_evidence_contracts.py",
+    "test/quality/test_run_evidence_manifests.py",
+    "test/quality/test_run_evidence_retry_runner.py",
+    "test/quality/test_source_gate_adversarial.py",
+    "test/quality/test_source_gate_aggregation.py",
+    "test/quality/test_source_gate_cli.py",
+    "test/quality/test_source_gate_contracts.py",
+    "test/quality/test_source_gate_driver.py",
+    "test/quality/test_source_gate_runtime.py",
+    "test/runtime_status_state.test.mjs",
+    "test/skill_page_state.test.mjs",
+    "test/test_build_sidecar_identity.py",
+    "test/test_capability.py",
+    "test/test_capability_catalog.py",
+    "test/test_codex_browser_auth_contract.py",
+    "test/test_profile_pin_contract.py",
+    "test/test_external_skill_install_bridge.py",
+    "test/test_gateway_rust.py",
+    "test/test_installed_provider_matrix.py",
+    "test/test_ops_scripts.sh",
+    "test/test_process_ownership_policy.py",
+    "test/test_provider_mock_scenarios.py",
+    "test/test_real_machine_guard.sh",
+    "test/test_run_all_aggregator.sh",
+    "test/test_run_loopback_retry.sh",
+    "test/test_scripts.sh",
+    "test/test_skill_runtime_boundary.py"
+  ],
+  "suites": [
+    {
+      "id": "SUITE-QUALITY-METADATA",
+      "name": "quality metadata validator",
+      "kind": "meta",
+      "category": "runner",
+      "entrypoint": "python3 test/quality/validate_quality_metadata.py metadata",
+      "entrypoint_id": "ENTRY-SOURCE-QUALITY-METADATA",
+      "command_argv": [
+        "{PYTHON}",
+        "-I",
+        "test/quality/validate_quality_metadata.py",
+        "metadata"
+      ],
+      "cwd_mode": "repo-root",
+      "profiles": [
+        "source"
+      ],
+      "adapter_protocol": "source-observation.v1",
+      "timeout_seconds": 60,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [
+        "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "test/quality/source_gate/adapter.py"
+      ],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "quality/",
+        "test/quality/validate_quality_metadata.py"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "quality-kernel",
+      "status": "implemented",
+      "reason": null,
+      "expiry": null,
+      "replacement_id": null,
+      "requirement_ids": [
+        "REQ-083-SCHEMA",
+        "REQ-083-VALIDATOR"
+      ],
+      "bug_ids": [],
+      "gate_ids": [
+        "GATE-SOURCE"
+      ],
+      "expected_status": "PASS",
+      "historical_case_ids": [],
+      "selection_rule": {
+        "mode": "focused",
+        "include_paths": [
+          "quality/"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      },
+      "test_identity": {
+        "path": "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "sha256": "330d1aca9adbe2b2f261699c1f1ce9d9b7093b0ff07a2c4acc9df3b4f46b66a2",
+        "suite_key": "QUALITY-METADATA"
+      }
+    },
+    {
+      "id": "SUITE-QUALITY-FOCUSED",
+      "name": "quality kernel focused unit tests",
+      "kind": "python",
+      "entrypoint": "python3 test/quality/test_quality_kernel.py",
+      "entrypoint_id": "ENTRY-SOURCE-QUALITY-FOCUSED",
+      "command_argv": [
+        "{PYTHON}",
+        "-m",
+        "unittest",
+        "test.quality.test_quality_kernel",
+        "-v"
+      ],
+      "cwd_mode": "repo-root",
+      "profiles": [
+        "source"
+      ],
+      "adapter_protocol": "source-observation.v1",
+      "timeout_seconds": 120,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [
+        "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "test/quality/source_gate/adapter.py"
+      ],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "test/quality/test_quality_kernel.py",
+        "test/quality/validate_quality_metadata.py"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "quality-kernel",
+      "status": "implemented",
+      "reason": null,
+      "expiry": null,
+      "replacement_id": null,
+      "requirement_ids": [
+        "REQ-083-VALIDATOR",
+        "REQ-083-FOCUSED"
+      ],
+      "bug_ids": [
+        "BUG-083-RC",
+        "BUG-083-RETRY",
+        "BUG-083-ORPHANS",
+        "BUG-083-RUST-COVERAGE",
+        "BUG-083-ARTIFACT-GATE",
+        "BUG-083-SCIENCE-MACHO",
+        "BUG-083-SSH-LATE",
+        "BUG-083-READINESS"
+      ],
+      "gate_ids": [
+        "GATE-SOURCE"
+      ],
+      "expected_status": "PASS",
+      "historical_case_ids": [
+        "CASE-RC-7",
+        "CASE-LOOPBACK-42",
+        "CASE-ORPHAN-4",
+        "CASE-CARGO-4",
+        "CASE-SCIENCE-MACHO",
+        "CASE-SSH-LATE"
+      ],
+      "selection_rule": {
+        "mode": "focused",
+        "include_paths": [
+          "quality/",
+          "test/quality/"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      },
+      "test_identity": {
+        "path": "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "sha256": "330d1aca9adbe2b2f261699c1f1ce9d9b7093b0ff07a2c4acc9df3b4f46b66a2",
+        "suite_key": "QUALITY-FOCUSED"
+      }
+    },
+    {
+      "id": "SUITE-QUALITY-IMPACT",
+      "name": "quality impact profile CLI",
+      "kind": "meta",
+      "category": "release",
+      "entrypoint": "python3 test/quality/validate_quality_metadata.py impact-pr --target-ref v0.8.2",
+      "entrypoint_id": "ENTRY-LEGACY-03",
+      "command_argv": [],
+      "cwd_mode": "repo-root",
+      "profiles": [],
+      "adapter_protocol": "legacy",
+      "timeout_seconds": null,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "test/quality/validate_quality_metadata.py",
+        "quality/release-lineage.v1.json",
+        "quality/production-paths.v1.json"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "quality-kernel",
+      "status": "implemented",
+      "reason": null,
+      "expiry": null,
+      "replacement_id": null,
+      "requirement_ids": [
+        "REQ-083-LINEAGE",
+        "REQ-083-VALIDATOR",
+        "REQ-083-PATHS"
+      ],
+      "bug_ids": [
+        "BUG-083-ARTIFACT-GATE",
+        "BUG-083-READINESS"
+      ],
+      "gate_ids": [
+        "GATE-QUALITY-PR",
+        "GATE-QUALITY-RELEASE"
+      ],
+      "expected_status": "PASS",
+      "historical_case_ids": [],
+      "selection_rule": {
+        "mode": "focused",
+        "include_paths": [
+          "quality/",
+          "test/quality/"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      }
+    },
+    {
+      "id": "SUITE-RUN-EVIDENCE-CONTRACT",
+      "name": "run evidence Result, manifest, atomic-store, clean-commit snapshot, fixed retry, and single-suite completion-seal contracts",
+      "kind": "python",
+      "category": "runner",
+      "entrypoint": "python3 -m unittest discover -s test/quality -p 'test_run_evidence_*.py' -v",
+      "entrypoint_id": "ENTRY-SOURCE-RUN-EVIDENCE",
+      "command_argv": [
+        "{PYTHON}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "test/quality",
+        "-p",
+        "test_run_evidence_*.py",
+        "-v"
+      ],
+      "cwd_mode": "repo-root",
+      "profiles": [
+        "source"
+      ],
+      "adapter_protocol": "source-observation.v1",
+      "timeout_seconds": 300,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [
+        "test/quality/fixtures/run_evidence/attempt0_fixture.py",
+        "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "test/quality/source_gate/adapter.py"
+      ],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "quality/schema/adapter-result.v1.schema.json",
+        "quality/schema/test-result.v1.schema.json",
+        "quality/schema/run-manifest.v1.schema.json",
+        "quality/schema/source-snapshot-manifest.v1.schema.json",
+        "quality/schema/change-set.v1.schema.json",
+        "quality/schema/evidence-manifest.v1.schema.json",
+        "quality/schema/completion-seal.v1.schema.json",
+        "quality/schema/run-failure.v1.schema.json",
+        "quality/schema/release-candidate.v1.schema.json",
+        "test/quality/run_evidence/contracts.py",
+        "test/quality/run_evidence/manifest_contracts.py",
+        "test/quality/run_evidence/atomic_store.py",
+        "test/quality/run_evidence/clean_commit_snapshot.py",
+        "test/quality/run_evidence/attempt0_runner.py",
+        "test/quality/run_evidence/retry_runner.py",
+        "test/quality/run_evidence/aggregation_runner.py",
+        "test/quality/run_evidence/cli.py",
+        "test/quality/test_run_evidence_contracts.py",
+        "test/quality/test_run_evidence_manifests.py",
+        "test/quality/test_run_evidence_atomic_store.py",
+        "test/quality/test_run_evidence_clean_commit_snapshot.py",
+        "test/quality/test_run_evidence_attempt0_runner.py",
+        "test/quality/test_run_evidence_retry_runner.py",
+        "test/quality/test_run_evidence_aggregation_runner.py",
+        "test/quality/test_run_evidence_cli.py"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "quality-kernel",
+      "status": "implemented",
+      "reason": null,
+      "expiry": null,
+      "replacement_id": null,
+      "requirement_ids": [
+        "REQ-083-SCHEMA",
+        "REQ-083-FOCUSED"
+      ],
+      "bug_ids": [],
+      "gate_ids": [
+        "GATE-SOURCE"
+      ],
+      "expected_status": "PASS",
+      "historical_case_ids": [],
+      "selection_rule": {
+        "mode": "focused",
+        "include_paths": [
+          "quality/",
+          "test/quality/"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      },
+      "test_identity": {
+        "path": "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "sha256": "330d1aca9adbe2b2f261699c1f1ce9d9b7093b0ff07a2c4acc9df3b4f46b66a2",
+        "suite_key": "RUN-EVIDENCE-CONTRACT"
+      }
+    },
+    {
+      "id": "SUITE-RUE05A",
+      "name": "fixed one-suite NODE-RUN-EVIDENCE CLI",
+      "kind": "python",
+      "category": "runner",
+      "entrypoint": "/usr/bin/python3 -I test/quality/run_evidence/cli.py run --output-root {ABS_EMPTY_0700_DIR}",
+      "entrypoint_id": "ENTRY-RUE05A-ATTEMPT0",
+      "command_argv": [
+        "/usr/bin/python3",
+        "-I",
+        "test/quality/run_evidence/cli.py",
+        "run",
+        "--output-root",
+        "{ABS_EMPTY_0700_DIR}"
+      ],
+      "cwd_mode": "repo-root",
+      "profiles": [
+        "focused"
+      ],
+      "adapter_protocol": "adapter-result.v1",
+      "timeout_seconds": 10,
+      "readiness_timeout_seconds": 2,
+      "retry_policy": "readiness-timeout-once",
+      "fixture_paths": [
+        "test/quality/fixtures/run_evidence/attempt0_fixture.py"
+      ],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "quality/schema/adapter-result.v1.schema.json",
+        "quality/schema/test-result.v1.schema.json",
+        "quality/schema/run-manifest.v1.schema.json",
+        "quality/schema/source-snapshot-manifest.v1.schema.json",
+        "quality/schema/evidence-manifest.v1.schema.json",
+        "quality/schema/completion-seal.v1.schema.json",
+        "test/quality/run_evidence/atomic_store.py",
+        "test/quality/run_evidence/clean_commit_snapshot.py",
+        "test/quality/run_evidence/contracts.py",
+        "test/quality/run_evidence/manifest_contracts.py",
+        "test/quality/run_evidence/attempt0_runner.py",
+        "test/quality/run_evidence/retry_runner.py",
+        "test/quality/run_evidence/aggregation_runner.py",
+        "test/quality/run_evidence/cli.py"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "quality-kernel",
+      "status": "implemented",
+      "reason": null,
+      "expiry": null,
+      "replacement_id": null,
+      "requirement_ids": [
+        "REQ-083-SCHEMA",
+        "REQ-083-FOCUSED"
+      ],
+      "bug_ids": [],
+      "gate_ids": [],
+      "expected_status": "PASS",
+      "historical_case_ids": [],
+      "selection_rule": {
+        "mode": "focused",
+        "include_paths": [
+          "quality/",
+          "test/quality/run_evidence/",
+          "test/quality/test_run_evidence_cli.py"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      }
+    },
+    {
+      "id": "SUITE-QUALITY-ARTIFACT",
+      "name": "artifact and late-layer quality boundary inventory",
+      "kind": "inventory",
+      "category": "artifact",
+      "entrypoint": "future artifact/installed/signing/public evidence fixture; executor not implemented in this node",
+      "entrypoint_id": "ENTRY-LEGACY-05",
+      "command_argv": [],
+      "cwd_mode": "repo-root",
+      "profiles": [],
+      "adapter_protocol": "legacy",
+      "timeout_seconds": null,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "desktop/src-tauri/tauri.conf.json",
+        "docs/operations/release.md"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "quality-kernel",
+      "status": "not-yet-automatable",
+      "reason": "The quality kernel records artifact and late-layer boundaries but does not run artifact, installed, signing, live, or public evidence.",
+      "expiry": "2026-10-01",
+      "replacement_id": "SUITE-QUALITY-FOCUSED",
+      "requirement_ids": [
+        "REQ-083-EVIDENCE",
+        "REQ-083-PATHS"
+      ],
+      "bug_ids": [
+        "BUG-083-ARTIFACT-GATE"
+      ],
+      "gate_ids": [
+        "GATE-QUALITY-META",
+        "GATE-QUALITY-PR",
+        "GATE-QUALITY-RELEASE"
+      ],
+      "expected_status": "NOT-RUN",
+      "historical_case_ids": [
+        "CASE-ARTIFACT-GATE"
+      ],
+      "selection_rule": {
+        "mode": "manual",
+        "include_paths": [
+          "desktop/src-tauri/tauri.conf.json"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      }
+    },
+    {
+      "id": "SUITE-QUALITY-INVENTORY",
+      "name": "quality inventory closure",
+      "kind": "inventory",
+      "entrypoint": "python3 test/quality/test_quality_kernel.py",
+      "entrypoint_id": "ENTRY-SOURCE-QUALITY-INVENTORY",
+      "command_argv": [
+        "{PYTHON}",
+        "-m",
+        "unittest",
+        "test.quality.test_quality_kernel",
+        "-v"
+      ],
+      "cwd_mode": "repo-root",
+      "profiles": [
+        "source"
+      ],
+      "adapter_protocol": "source-observation.v1",
+      "timeout_seconds": 120,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [
+        "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "test/quality/source_gate/adapter.py"
+      ],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "test/quality/test_quality_kernel.py",
+        "test/",
+        "desktop/"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "quality-kernel",
+      "status": "implemented",
+      "reason": null,
+      "expiry": null,
+      "replacement_id": null,
+      "requirement_ids": [
+        "REQ-083-INVENTORY",
+        "REQ-083-PATHS"
+      ],
+      "bug_ids": [
+        "BUG-083-ORPHANS",
+        "BUG-083-RUST-COVERAGE"
+      ],
+      "gate_ids": [
+        "GATE-SOURCE"
+      ],
+      "expected_status": "PASS",
+      "historical_case_ids": [
+        "CASE-ORPHAN-4",
+        "CASE-CARGO-4"
+      ],
+      "selection_rule": {
+        "mode": "focused",
+        "include_paths": [
+          "test/",
+          "desktop/"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      },
+      "test_identity": {
+        "path": "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "sha256": "330d1aca9adbe2b2f261699c1f1ce9d9b7093b0ff07a2c4acc9df3b4f46b66a2",
+        "suite_key": "QUALITY-INVENTORY"
+      }
+    },
+    {
+      "id": "SUITE-PY-OFFLINE",
+      "name": "legacy offline Python layer",
+      "kind": "python",
+      "entrypoint": "python3 -m unittest test.test_capability test.test_capability_catalog test.test_process_ownership_policy test.test_codex_browser_auth_contract test.test_build_sidecar_identity -v",
+      "entrypoint_id": "ENTRY-SOURCE-PY-OFFLINE",
+      "command_argv": [
+        "{PYTHON}",
+        "-m",
+        "unittest",
+        "test.test_capability",
+        "test.test_capability_catalog",
+        "test.test_process_ownership_policy",
+        "test.test_codex_browser_auth_contract",
+        "test.test_profile_pin_contract",
+        "test.test_build_sidecar_identity",
+        "-v"
+      ],
+      "cwd_mode": "repo-root",
+      "profiles": [
+        "source"
+      ],
+      "adapter_protocol": "source-observation.v1",
+      "timeout_seconds": 180,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [
+        "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "test/quality/source_gate/adapter.py"
+      ],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "test/run-offline.sh",
+        "test/test_capability.py",
+        "test/test_capability_catalog.py",
+        "test/test_process_ownership_policy.py",
+        "test/test_codex_browser_auth_contract.py",
+        "test/test_profile_pin_contract.py",
+        "test/test_build_sidecar_identity.py"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "legacy-test-gate",
+      "status": "implemented",
+      "reason": null,
+      "expiry": null,
+      "replacement_id": null,
+      "requirement_ids": [
+        "REQ-083-EVIDENCE"
+      ],
+      "bug_ids": [],
+      "gate_ids": [
+        "GATE-SOURCE"
+      ],
+      "expected_status": "PASS",
+      "historical_case_ids": [],
+      "selection_rule": {
+        "mode": "registered-only",
+        "include_paths": [
+          "test/run-offline.sh"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      },
+      "test_identity": {
+        "path": "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "sha256": "330d1aca9adbe2b2f261699c1f1ce9d9b7093b0ff07a2c4acc9df3b4f46b66a2",
+        "suite_key": "PY-OFFLINE"
+      }
+    },
+    {
+      "id": "SUITE-PY-LOOPBACK",
+      "name": "current-source gateway loopback Python layer",
+      "kind": "python",
+      "entrypoint": "snapshot-bound gateway driver: cargo build --offline --locked, then fixed loopback unittest",
+      "entrypoint_id": "ENTRY-SOURCE-PY-LOOPBACK",
+      "command_argv": [
+        "{PYTHON}",
+        "-I",
+        "-c",
+        "import os;os.lseek(195,0,0);p='/dev/fd/195';exec(compile(open(p,'rb').read(),p,'exec'))",
+        "--config-fd",
+        "197",
+        "--derived-fd",
+        "199"
+      ],
+      "cwd_mode": "repo-root",
+      "profiles": [
+        "source"
+      ],
+      "adapter_protocol": "source-observation.v1",
+      "timeout_seconds": 1200,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [
+        "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "test/quality/source_gate/adapter.py",
+        "test/quality/source_gate/gateway_driver.py"
+      ],
+      "build_recipe_paths": [
+        "desktop/gateway/"
+      ],
+      "environment_allowlist": [],
+      "source_paths": [
+        "test/quality/source_gate/gateway_driver.py",
+        "test/run-loopback.sh",
+        "test/test_gateway_rust.py",
+        "test/test_provider_mock_scenarios.py",
+        "test/test_installed_provider_matrix.py"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "legacy-test-gate",
+      "status": "implemented",
+      "reason": null,
+      "expiry": null,
+      "replacement_id": null,
+      "requirement_ids": [
+        "REQ-083-EVIDENCE"
+      ],
+      "bug_ids": [
+        "BUG-083-RETRY"
+      ],
+      "gate_ids": [
+        "GATE-SOURCE"
+      ],
+      "expected_status": "PASS",
+      "historical_case_ids": [
+        "CASE-LOOPBACK-42"
+      ],
+      "selection_rule": {
+        "mode": "registered-only",
+        "include_paths": [
+          "test/run-loopback.sh"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      },
+      "test_identity": {
+        "path": "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "sha256": "330d1aca9adbe2b2f261699c1f1ce9d9b7093b0ff07a2c4acc9df3b4f46b66a2",
+        "suite_key": "PY-LOOPBACK"
+      }
+    },
+    {
+      "id": "SUITE-SHELL-SCRIPTS",
+      "name": "legacy scripts and real-machine guards",
+      "kind": "shell",
+      "category": "host",
+      "entrypoint": "bash test/run-scripts.sh",
+      "entrypoint_id": "ENTRY-SOURCE-SHELL-SCRIPTS",
+      "command_argv": [
+        "{BASH}",
+        "test/quality/source_gate/shell_suite.sh"
+      ],
+      "cwd_mode": "repo-root",
+      "profiles": [
+        "source"
+      ],
+      "adapter_protocol": "source-observation.v1",
+      "timeout_seconds": 600,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [
+        "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "test/quality/source_gate/adapter.py"
+      ],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "test/run-scripts.sh",
+        "test/test_scripts.sh",
+        "test/test_ops_scripts.sh",
+        "test/test_real_machine_guard.sh"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "legacy-test-gate",
+      "status": "implemented",
+      "reason": null,
+      "expiry": null,
+      "replacement_id": null,
+      "requirement_ids": [
+        "REQ-083-EVIDENCE",
+        "REQ-083-PATHS"
+      ],
+      "bug_ids": [],
+      "gate_ids": [
+        "GATE-SOURCE"
+      ],
+      "expected_status": "PASS",
+      "historical_case_ids": [],
+      "selection_rule": {
+        "mode": "registered-only",
+        "include_paths": [
+          "test/run-scripts.sh"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      },
+      "test_identity": {
+        "path": "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "sha256": "330d1aca9adbe2b2f261699c1f1ce9d9b7093b0ff07a2c4acc9df3b4f46b66a2",
+        "suite_key": "SHELL-SCRIPTS"
+      }
+    },
+    {
+      "id": "SUITE-RUST-DESKTOP",
+      "name": "desktop Cargo manifest",
+      "kind": "rust",
+      "entrypoint": "cargo test --manifest-path desktop/src-tauri/Cargo.toml",
+      "entrypoint_id": "ENTRY-SOURCE-RUST-DESKTOP",
+      "command_argv": [
+        "{CARGO}",
+        "test",
+        "--offline",
+        "--manifest-path",
+        "desktop/src-tauri/Cargo.toml"
+      ],
+      "cwd_mode": "repo-root",
+      "profiles": [
+        "source"
+      ],
+      "adapter_protocol": "source-observation.v1",
+      "timeout_seconds": 3600,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [
+        "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "test/quality/source_gate/adapter.py"
+      ],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "desktop/src-tauri/Cargo.toml",
+        "test/run-rust.sh"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "legacy-test-gate",
+      "status": "implemented",
+      "reason": null,
+      "expiry": null,
+      "replacement_id": null,
+      "requirement_ids": [
+        "REQ-083-INVENTORY",
+        "REQ-083-EVIDENCE",
+        "REQ-083-SCIENCE-UPDATER",
+        "REQ-083-SCIENCE-REATTACH",
+        "REQ-083-SSH-LATE"
+      ],
+      "bug_ids": [
+        "BUG-083-RUST-COVERAGE",
+        "BUG-083-SCIENCE-UPDATER",
+        "BUG-083-SCIENCE-REATTACH",
+        "BUG-083-SSH-LATE"
+      ],
+      "gate_ids": [
+        "GATE-SOURCE"
+      ],
+      "expected_status": "PASS",
+      "historical_case_ids": [
+        "CASE-CARGO-4"
+      ],
+      "selection_rule": {
+        "mode": "manual",
+        "include_paths": [
+          "desktop/src-tauri/Cargo.toml"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      },
+      "test_identity": {
+        "path": "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "sha256": "330d1aca9adbe2b2f261699c1f1ce9d9b7093b0ff07a2c4acc9df3b4f46b66a2",
+        "suite_key": "RUST-DESKTOP"
+      }
+    },
+    {
+      "id": "SUITE-RUST-GATEWAY",
+      "name": "gateway Cargo manifest",
+      "kind": "rust",
+      "entrypoint": "cargo test --manifest-path desktop/gateway/Cargo.toml",
+      "entrypoint_id": "ENTRY-SOURCE-RUST-GATEWAY",
+      "command_argv": [
+        "{CARGO}",
+        "test",
+        "--offline",
+        "--manifest-path",
+        "desktop/gateway/Cargo.toml"
+      ],
+      "cwd_mode": "repo-root",
+      "profiles": [
+        "source"
+      ],
+      "adapter_protocol": "source-observation.v1",
+      "timeout_seconds": 1800,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [
+        "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "test/quality/source_gate/adapter.py"
+      ],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "desktop/gateway/Cargo.toml",
+        "test/run-rust.sh",
+        "test/run-loopback.sh"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "legacy-test-gate",
+      "status": "implemented",
+      "reason": null,
+      "expiry": null,
+      "replacement_id": null,
+      "requirement_ids": [
+        "REQ-083-INVENTORY",
+        "REQ-083-EVIDENCE"
+      ],
+      "bug_ids": [
+        "BUG-083-RUST-COVERAGE"
+      ],
+      "gate_ids": [
+        "GATE-SOURCE"
+      ],
+      "expected_status": "PASS",
+      "historical_case_ids": [
+        "CASE-CARGO-4"
+      ],
+      "selection_rule": {
+        "mode": "manual",
+        "include_paths": [
+          "desktop/gateway/Cargo.toml"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      },
+      "test_identity": {
+        "path": "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "sha256": "330d1aca9adbe2b2f261699c1f1ce9d9b7093b0ff07a2c4acc9df3b4f46b66a2",
+        "suite_key": "RUST-GATEWAY"
+      }
+    },
+    {
+      "id": "SUITE-RUST-CODEX-NETWORK",
+      "name": "codex-network Cargo manifest",
+      "kind": "rust",
+      "entrypoint": "cargo test --manifest-path desktop/codex-network/Cargo.toml",
+      "entrypoint_id": "ENTRY-SOURCE-RUST-CODEX",
+      "command_argv": [
+        "{CARGO}",
+        "test",
+        "--offline",
+        "--manifest-path",
+        "desktop/codex-network/Cargo.toml"
+      ],
+      "cwd_mode": "repo-root",
+      "profiles": [
+        "source"
+      ],
+      "adapter_protocol": "source-observation.v1",
+      "timeout_seconds": 600,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [
+        "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "test/quality/source_gate/adapter.py"
+      ],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "desktop/codex-network/Cargo.toml",
+        "test/run-rust.sh"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "quality-kernel",
+      "status": "implemented",
+      "reason": null,
+      "expiry": null,
+      "replacement_id": null,
+      "requirement_ids": [
+        "REQ-083-INVENTORY",
+        "REQ-083-VALIDATOR"
+      ],
+      "bug_ids": [
+        "BUG-083-RUST-COVERAGE"
+      ],
+      "gate_ids": [
+        "GATE-SOURCE"
+      ],
+      "expected_status": "PASS",
+      "historical_case_ids": [
+        "CASE-CARGO-4"
+      ],
+      "selection_rule": {
+        "mode": "manual",
+        "include_paths": [
+          "desktop/codex-network/Cargo.toml"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      },
+      "test_identity": {
+        "path": "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "sha256": "330d1aca9adbe2b2f261699c1f1ce9d9b7093b0ff07a2c4acc9df3b4f46b66a2",
+        "suite_key": "RUST-CODEX-NETWORK"
+      }
+    },
+    {
+      "id": "SUITE-RUST-SKILL-PACKAGE",
+      "name": "skill-package Cargo manifest",
+      "kind": "rust",
+      "entrypoint": "cargo test --manifest-path desktop/skill-package/Cargo.toml -- --test-threads=1",
+      "entrypoint_id": "ENTRY-SOURCE-RUST-SKILL",
+      "command_argv": [
+        "{CARGO}",
+        "test",
+        "--offline",
+        "--manifest-path",
+        "desktop/skill-package/Cargo.toml",
+        "--",
+        "--test-threads=1"
+      ],
+      "cwd_mode": "repo-root",
+      "profiles": [
+        "source"
+      ],
+      "adapter_protocol": "source-observation.v1",
+      "timeout_seconds": 1800,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [
+        "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "test/quality/source_gate/adapter.py"
+      ],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "desktop/skill-package/Cargo.toml",
+        "test/run-rust.sh"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "quality-kernel",
+      "status": "implemented",
+      "reason": null,
+      "expiry": null,
+      "replacement_id": null,
+      "requirement_ids": [
+        "REQ-083-INVENTORY",
+        "REQ-083-VALIDATOR"
+      ],
+      "bug_ids": [
+        "BUG-083-RUST-COVERAGE"
+      ],
+      "gate_ids": [
+        "GATE-SOURCE"
+      ],
+      "expected_status": "PASS",
+      "historical_case_ids": [
+        "CASE-CARGO-4"
+      ],
+      "selection_rule": {
+        "mode": "manual",
+        "include_paths": [
+          "desktop/skill-package/Cargo.toml"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      },
+      "test_identity": {
+        "path": "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "sha256": "330d1aca9adbe2b2f261699c1f1ce9d9b7093b0ff07a2c4acc9df3b4f46b66a2",
+        "suite_key": "RUST-SKILL-PACKAGE"
+      }
+    },
+    {
+      "id": "SUITE-MJS-FRONTEND",
+      "name": "legacy frontend MJS runner",
+      "kind": "frontend",
+      "entrypoint": "bash test/run-frontend.sh",
+      "entrypoint_id": "ENTRY-SOURCE-MJS-FRONTEND",
+      "command_argv": [
+        "{NODE}",
+        "--test",
+        "test/codex_auth_ui.test.mjs",
+        "test/model_catalog_state.test.mjs",
+        "test/profile_preview_mock.test.mjs",
+        "test/runtime_status_state.test.mjs",
+        "test/skill_page_state.test.mjs"
+      ],
+      "cwd_mode": "repo-root",
+      "profiles": [
+        "source"
+      ],
+      "adapter_protocol": "source-observation.v1",
+      "timeout_seconds": 180,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [
+        "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "test/quality/source_gate/adapter.py"
+      ],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "test/run-frontend.sh",
+        "test/codex_auth_ui.test.mjs",
+        "test/model_catalog_state.test.mjs",
+        "test/profile_preview_mock.test.mjs",
+        "test/runtime_status_state.test.mjs",
+        "test/skill_page_state.test.mjs"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "legacy-test-gate",
+      "status": "implemented",
+      "reason": null,
+      "expiry": null,
+      "replacement_id": null,
+      "requirement_ids": [
+        "REQ-083-INVENTORY",
+        "REQ-083-EVIDENCE"
+      ],
+      "bug_ids": [],
+      "gate_ids": [
+        "GATE-SOURCE"
+      ],
+      "expected_status": "PASS",
+      "historical_case_ids": [],
+      "selection_rule": {
+        "mode": "registered-only",
+        "include_paths": [
+          "test/run-frontend.sh"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      },
+      "test_identity": {
+        "path": "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "sha256": "330d1aca9adbe2b2f261699c1f1ce9d9b7093b0ff07a2c4acc9df3b4f46b66a2",
+        "suite_key": "MJS-FRONTEND"
+      }
+    },
+    {
+      "id": "SUITE-MODEL-CATALOG-ACC",
+      "name": "model catalog acceptance entrypoint",
+      "kind": "python",
+      "entrypoint": "bash test/run_model_catalog_coverage_acceptance.sh",
+      "entrypoint_id": "ENTRY-LEGACY-15",
+      "command_argv": [],
+      "cwd_mode": "repo-root",
+      "profiles": [],
+      "adapter_protocol": "legacy",
+      "timeout_seconds": null,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "test/run_model_catalog_coverage_acceptance.sh",
+        "test/model_catalog_coverage_acceptance.py"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "legacy-test-gate",
+      "status": "not-yet-automatable",
+      "reason": "Acceptance command builds and signs temporary App bundles; it is not source-only and is excluded from GATE-SOURCE.",
+      "expiry": "2026-10-01",
+      "replacement_id": "SUITE-SOURCE-GATE-CONTRACT",
+      "requirement_ids": [
+        "REQ-083-INVENTORY",
+        "REQ-083-EVIDENCE"
+      ],
+      "bug_ids": [],
+      "gate_ids": [
+        "GATE-S0-LEGACY"
+      ],
+      "expected_status": "NOT-RUN",
+      "historical_case_ids": [],
+      "selection_rule": {
+        "mode": "registered-only",
+        "include_paths": [
+          "test/run_model_catalog_coverage_acceptance.sh"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      }
+    },
+    {
+      "id": "SUITE-ORPHAN-AGGREGATOR",
+      "name": "orphan run_all aggregator self-test",
+      "kind": "shell",
+      "entrypoint": "bash test/test_run_all_aggregator.sh",
+      "entrypoint_id": "ENTRY-LEGACY-16",
+      "command_argv": [],
+      "cwd_mode": "repo-root",
+      "profiles": [],
+      "adapter_protocol": "legacy",
+      "timeout_seconds": null,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "test/test_run_all_aggregator.sh"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "quality-kernel",
+      "status": "retired",
+      "reason": "Retired after migration to the catalog-bound trusted source gate.",
+      "expiry": "2026-10-01",
+      "replacement_id": "SUITE-SOURCE-GATE-CONTRACT",
+      "requirement_ids": [
+        "REQ-083-INVENTORY",
+        "REQ-083-FOCUSED"
+      ],
+      "bug_ids": [
+        "BUG-083-RC",
+        "BUG-083-ORPHANS",
+        "BUG-083-READINESS"
+      ],
+      "gate_ids": [],
+      "expected_status": "NOT-RUN",
+      "historical_case_ids": [
+        "CASE-RC-7",
+        "CASE-ORPHAN-4"
+      ],
+      "selection_rule": {
+        "mode": "manual",
+        "include_paths": [
+          "test/test_run_all_aggregator.sh"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      },
+      "retirement": {
+        "retired_on": "2026-07-26",
+        "reason": "The trusted source gate replaces this nonauthoritative historical entrypoint.",
+        "replacement_id": "SUITE-SOURCE-GATE-CONTRACT"
+      }
+    },
+    {
+      "id": "SUITE-ORPHAN-RETRY",
+      "name": "orphan loopback retry self-test",
+      "kind": "shell",
+      "entrypoint": "bash test/test_run_loopback_retry.sh",
+      "entrypoint_id": "ENTRY-LEGACY-17",
+      "command_argv": [],
+      "cwd_mode": "repo-root",
+      "profiles": [],
+      "adapter_protocol": "legacy",
+      "timeout_seconds": null,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "test/test_run_loopback_retry.sh"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "quality-kernel",
+      "status": "retired",
+      "reason": "Retired after migration to the catalog-bound trusted source gate.",
+      "expiry": "2026-10-01",
+      "replacement_id": "SUITE-SOURCE-GATE-CONTRACT",
+      "requirement_ids": [
+        "REQ-083-INVENTORY",
+        "REQ-083-FOCUSED"
+      ],
+      "bug_ids": [
+        "BUG-083-RETRY",
+        "BUG-083-ORPHANS"
+      ],
+      "gate_ids": [],
+      "expected_status": "NOT-RUN",
+      "historical_case_ids": [
+        "CASE-LOOPBACK-42",
+        "CASE-ORPHAN-4"
+      ],
+      "selection_rule": {
+        "mode": "manual",
+        "include_paths": [
+          "test/test_run_loopback_retry.sh"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      },
+      "retirement": {
+        "retired_on": "2026-07-26",
+        "reason": "The trusted source gate replaces this nonauthoritative historical entrypoint.",
+        "replacement_id": "SUITE-SOURCE-GATE-CONTRACT"
+      }
+    },
+    {
+      "id": "SUITE-ORPHAN-SKILL-BRIDGE",
+      "name": "orphan external skill bridge tests",
+      "kind": "python",
+      "entrypoint": "python3 -m unittest test.test_external_skill_install_bridge -v",
+      "entrypoint_id": "ENTRY-SOURCE-SKILL-BRIDGE",
+      "command_argv": [
+        "{PYTHON}",
+        "-m",
+        "unittest",
+        "test.test_external_skill_install_bridge",
+        "-v"
+      ],
+      "cwd_mode": "repo-root",
+      "profiles": [
+        "source"
+      ],
+      "adapter_protocol": "source-observation.v1",
+      "timeout_seconds": 180,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [
+        "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "test/quality/source_gate/adapter.py"
+      ],
+      "build_recipe_paths": [],
+      "environment_allowlist": [
+        "CSSWITCH_GATEWAY_BIN"
+      ],
+      "source_paths": [
+        "test/test_external_skill_install_bridge.py"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "quality-kernel",
+      "status": "implemented",
+      "reason": null,
+      "expiry": null,
+      "replacement_id": null,
+      "requirement_ids": [
+        "REQ-083-INVENTORY",
+        "REQ-083-FOCUSED"
+      ],
+      "bug_ids": [
+        "BUG-083-ORPHANS"
+      ],
+      "gate_ids": [
+        "GATE-SOURCE"
+      ],
+      "expected_status": "PASS",
+      "historical_case_ids": [
+        "CASE-ORPHAN-4"
+      ],
+      "selection_rule": {
+        "mode": "manual",
+        "include_paths": [
+          "test/test_external_skill_install_bridge.py"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      },
+      "test_identity": {
+        "path": "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "sha256": "330d1aca9adbe2b2f261699c1f1ce9d9b7093b0ff07a2c4acc9df3b4f46b66a2",
+        "suite_key": "ORPHAN-SKILL-BRIDGE"
+      }
+    },
+    {
+      "id": "SUITE-ORPHAN-SKILL-BOUNDARY",
+      "name": "orphan skill runtime boundary tests",
+      "kind": "python",
+      "entrypoint": "python3 -m unittest test.test_skill_runtime_boundary -v",
+      "entrypoint_id": "ENTRY-SOURCE-SKILL-BOUNDARY",
+      "command_argv": [
+        "{PYTHON}",
+        "-m",
+        "unittest",
+        "test.test_skill_runtime_boundary",
+        "-v"
+      ],
+      "cwd_mode": "repo-root",
+      "profiles": [
+        "source"
+      ],
+      "adapter_protocol": "source-observation.v1",
+      "timeout_seconds": 180,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [
+        "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "test/quality/source_gate/adapter.py"
+      ],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "test/test_skill_runtime_boundary.py"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "quality-kernel",
+      "status": "implemented",
+      "reason": null,
+      "expiry": null,
+      "replacement_id": null,
+      "requirement_ids": [
+        "REQ-083-INVENTORY",
+        "REQ-083-FOCUSED"
+      ],
+      "bug_ids": [
+        "BUG-083-ORPHANS"
+      ],
+      "gate_ids": [
+        "GATE-SOURCE"
+      ],
+      "expected_status": "PASS",
+      "historical_case_ids": [
+        "CASE-ORPHAN-4"
+      ],
+      "selection_rule": {
+        "mode": "manual",
+        "include_paths": [
+          "test/test_skill_runtime_boundary.py"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      },
+      "test_identity": {
+        "path": "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "sha256": "330d1aca9adbe2b2f261699c1f1ce9d9b7093b0ff07a2c4acc9df3b4f46b66a2",
+        "suite_key": "ORPHAN-SKILL-BOUNDARY"
+      }
+    },
+    {
+      "id": "SUITE-LEGACY-RUN-ALL",
+      "name": "legacy S0 aggregate",
+      "kind": "meta",
+      "entrypoint": "bash test/run_all.sh",
+      "entrypoint_id": "ENTRY-LEGACY-20",
+      "command_argv": [],
+      "cwd_mode": "repo-root",
+      "profiles": [],
+      "adapter_protocol": "legacy",
+      "timeout_seconds": null,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "test/run_all.sh"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "legacy-test-gate",
+      "status": "retired",
+      "reason": "Retired after migration to the catalog-bound trusted source gate.",
+      "expiry": "2026-10-01",
+      "replacement_id": "SUITE-SOURCE-GATE-CONTRACT",
+      "requirement_ids": [
+        "REQ-083-EVIDENCE",
+        "REQ-083-FOCUSED"
+      ],
+      "bug_ids": [
+        "BUG-083-RC",
+        "BUG-083-RETRY",
+        "BUG-083-ORPHANS",
+        "BUG-083-RUST-COVERAGE",
+        "BUG-083-ARTIFACT-GATE",
+        "BUG-083-SCIENCE-MACHO",
+        "BUG-083-SSH-LATE",
+        "BUG-083-READINESS"
+      ],
+      "gate_ids": [],
+      "expected_status": "NOT-RUN",
+      "historical_case_ids": [
+        "CASE-RC-7",
+        "CASE-LOOPBACK-42"
+      ],
+      "selection_rule": {
+        "mode": "manual",
+        "include_paths": [
+          "test/run_all.sh",
+          "test/run-contract.sh",
+          "test/run-frontend.sh",
+          "test/run-lifecycle.sh",
+          "test/run-live.sh",
+          "test/run-loopback.sh",
+          "test/run-offline.sh",
+          "test/run-rust.sh",
+          "test/run-scripts.sh",
+          "test/run_model_catalog_coverage_acceptance.sh"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      },
+      "retirement": {
+        "retired_on": "2026-07-26",
+        "reason": "The trusted source gate replaces this nonauthoritative historical entrypoint.",
+        "replacement_id": "SUITE-SOURCE-GATE-CONTRACT"
+      }
+    },
+    {
+      "id": "SUITE-PRODUCT-SCIENCE-UPDATER",
+      "name": "Science check-only and updater regression",
+      "kind": "manual",
+      "entrypoint": "two exact ignored Cargo tests with manifest-matched standalone updater and DMG-seed executable paths, versions, and SHA-256 values; see the dated compatibility investigation",
+      "entrypoint_id": "ENTRY-PRODUCT-SCIENCE-UPDATER",
+      "command_argv": [],
+      "cwd_mode": "repo-root",
+      "profiles": [
+        "acceptance"
+      ],
+      "adapter_protocol": "legacy",
+      "timeout_seconds": null,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "desktop/src-tauri/src/runtime/science.rs",
+        "docs/evidence/investigations/2026-07-28-claude-science-0.1.25-compatibility.md"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "science-runtime",
+      "status": "manual",
+      "reason": "The dual-track official-artifact source oracle is implemented and passed manually for 0.1.20 and 0.1.25 using temporary state and read-only DMG mounts. It remains excluded from the fixed source gate and cannot establish the fixed CSSwitch artifact, installed/live runtime, signing, or public layers.",
+      "expiry": "2026-10-01",
+      "replacement_id": "SUITE-QUALITY-FOCUSED",
+      "requirement_ids": [
+        "REQ-083-SCIENCE-UPDATER",
+        "REQ-083-EVIDENCE"
+      ],
+      "bug_ids": [
+        "BUG-083-SCIENCE-UPDATER"
+      ],
+      "gate_ids": [
+        "GATE-SCIENCE-UPDATER",
+        "GATE-QUALITY-RELEASE"
+      ],
+      "expected_status": "NOT-RUN",
+      "historical_case_ids": [
+        "CASE-SCIENCE-UPDATER"
+      ],
+      "selection_rule": {
+        "mode": "manual",
+        "include_paths": [
+          "desktop/src-tauri/src/runtime/science.rs"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      }
+    },
+    {
+      "id": "SUITE-PRODUCT-DEEPSEEK",
+      "name": "DeepSeek Pro thinking multi-round regression",
+      "kind": "manual",
+      "entrypoint": "future DeepSeek Pro thinking multi-round fixture; provider executor not implemented in this node",
+      "entrypoint_id": "ENTRY-LEGACY-22",
+      "command_argv": [],
+      "cwd_mode": "repo-root",
+      "profiles": [],
+      "adapter_protocol": "legacy",
+      "timeout_seconds": null,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "desktop/gateway/src/openai_responses.rs",
+        "test/test_gateway_rust.py"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "gateway",
+      "status": "not-yet-automatable",
+      "reason": "Source/mock registration is present; provider-layer reproduction is intentionally not run here.",
+      "expiry": "2026-10-01",
+      "replacement_id": "SUITE-QUALITY-FOCUSED",
+      "requirement_ids": [
+        "REQ-083-DEEPSEEK-THINKING",
+        "REQ-083-EVIDENCE"
+      ],
+      "bug_ids": [
+        "BUG-083-DEEPSEEK-THINKING"
+      ],
+      "gate_ids": [
+        "GATE-DEEPSEEK-THINKING",
+        "GATE-QUALITY-RELEASE"
+      ],
+      "expected_status": "NOT-RUN",
+      "historical_case_ids": [
+        "CASE-DEEPSEEK-THINKING"
+      ],
+      "selection_rule": {
+        "mode": "manual",
+        "include_paths": [
+          "desktop/gateway/src/openai_responses.rs"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      }
+    },
+    {
+      "id": "SUITE-PRODUCT-DATABASE",
+      "name": "Database access error fixture",
+      "kind": "manual",
+      "entrypoint": "future temporary database-access fixture; executor not implemented in this node",
+      "entrypoint_id": "ENTRY-LEGACY-23",
+      "command_argv": [],
+      "cwd_mode": "repo-root",
+      "profiles": [],
+      "adapter_protocol": "legacy",
+      "timeout_seconds": null,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "desktop/src-tauri/src/config.rs",
+        "desktop/src-tauri/src/runtime/transaction.rs"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "runtime-state",
+      "status": "not-yet-automatable",
+      "reason": "Database ownership and migration boundaries require a later isolated fixture; real user databases are out of scope.",
+      "expiry": "2026-10-01",
+      "replacement_id": "SUITE-QUALITY-FOCUSED",
+      "requirement_ids": [
+        "REQ-083-DATABASE-ERROR",
+        "REQ-083-EVIDENCE"
+      ],
+      "bug_ids": [
+        "BUG-083-DATABASE-ERROR"
+      ],
+      "gate_ids": [
+        "GATE-DATABASE-ERROR",
+        "GATE-QUALITY-RELEASE"
+      ],
+      "expected_status": "NOT-RUN",
+      "historical_case_ids": [
+        "CASE-DATABASE-ERROR"
+      ],
+      "selection_rule": {
+        "mode": "manual",
+        "include_paths": [
+          "desktop/src-tauri/src/runtime/transaction.rs"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      }
+    },
+    {
+      "id": "SUITE-PRODUCT-GITHUB-BUNDLE",
+      "name": "GitHub Skill bundle structure regression",
+      "kind": "manual",
+      "entrypoint": "future temporary GitHub bundle archive fixture; executor not implemented in this node",
+      "entrypoint_id": "ENTRY-LEGACY-24",
+      "command_argv": [],
+      "cwd_mode": "repo-root",
+      "profiles": [],
+      "adapter_protocol": "legacy",
+      "timeout_seconds": null,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "desktop/skill-package/src/github.rs",
+        "desktop/skill-package/src/archive.rs"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "skill-package",
+      "status": "not-yet-automatable",
+      "reason": "A later fixture must cover BUNDLE_STRUCTURE_UNSUPPORTED without public GitHub or real Skill state.",
+      "expiry": "2026-10-01",
+      "replacement_id": "SUITE-QUALITY-FOCUSED",
+      "requirement_ids": [
+        "REQ-083-GITHUB-BUNDLE",
+        "REQ-083-EVIDENCE"
+      ],
+      "bug_ids": [
+        "BUG-083-GITHUB-BUNDLE"
+      ],
+      "gate_ids": [
+        "GATE-GITHUB-BUNDLE",
+        "GATE-QUALITY-RELEASE"
+      ],
+      "expected_status": "NOT-RUN",
+      "historical_case_ids": [
+        "CASE-GITHUB-BUNDLE"
+      ],
+      "selection_rule": {
+        "mode": "manual",
+        "include_paths": [
+          "desktop/skill-package/src/github.rs"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      }
+    },
+    {
+      "id": "SUITE-PRODUCT-MCP",
+      "name": "Local stdio MCP Acceptance and HTTPS boundary regression",
+      "kind": "manual",
+      "entrypoint": "future local stdio MCP and HTTPS boundary fixture; executor not implemented in this node",
+      "entrypoint_id": "ENTRY-LEGACY-25",
+      "command_argv": [],
+      "cwd_mode": "repo-root",
+      "profiles": [],
+      "adapter_protocol": "legacy",
+      "timeout_seconds": null,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "desktop/gateway/src/server.rs",
+        "desktop/gateway/src/main.rs"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "gateway",
+      "status": "not-yet-automatable",
+      "reason": "Local Acceptance and remote HTTPS evidence must be tested as separate layers in a later node.",
+      "expiry": "2026-10-01",
+      "replacement_id": "SUITE-QUALITY-FOCUSED",
+      "requirement_ids": [
+        "REQ-083-MCP-BOUNDARY",
+        "REQ-083-EVIDENCE"
+      ],
+      "bug_ids": [
+        "BUG-083-MCP-BOUNDARY"
+      ],
+      "gate_ids": [
+        "GATE-MCP-BOUNDARY",
+        "GATE-QUALITY-RELEASE"
+      ],
+      "expected_status": "NOT-RUN",
+      "historical_case_ids": [
+        "CASE-MCP-BOUNDARY"
+      ],
+      "selection_rule": {
+        "mode": "manual",
+        "include_paths": [
+          "desktop/gateway/src/server.rs"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      }
+    },
+    {
+      "id": "SUITE-PRODUCT-OPENCODE-65",
+      "name": "OpenCode Go issue 65 regression",
+      "kind": "manual",
+      "entrypoint": "future exact OpenCode Go issue 65 fixture; provider executor not implemented in this node",
+      "entrypoint_id": "ENTRY-LEGACY-26",
+      "command_argv": [],
+      "cwd_mode": "repo-root",
+      "profiles": [],
+      "adapter_protocol": "legacy",
+      "timeout_seconds": null,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "desktop/src-tauri/src/runtime/provider.rs",
+        "catalog/opencode-go-model-routes.v1.json"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "gateway",
+      "status": "not-yet-automatable",
+      "reason": "Issue 65 requires exact route/selector and later provider-layer evidence; this node only registers it.",
+      "expiry": "2026-10-01",
+      "replacement_id": "SUITE-QUALITY-FOCUSED",
+      "requirement_ids": [
+        "REQ-083-OPENCODE-65",
+        "REQ-083-EVIDENCE"
+      ],
+      "bug_ids": [
+        "BUG-083-OPENCODE-65"
+      ],
+      "gate_ids": [
+        "GATE-OPENCODE-65",
+        "GATE-QUALITY-RELEASE"
+      ],
+      "expected_status": "NOT-RUN",
+      "historical_case_ids": [
+        "CASE-OPENCODE-65"
+      ],
+      "selection_rule": {
+        "mode": "manual",
+        "include_paths": [
+          "catalog/opencode-go-model-routes.v1.json"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      }
+    },
+    {
+      "id": "SUITE-PRODUCT-MACHO",
+      "name": "Science Mach-O metadata acceptance regression",
+      "kind": "manual",
+      "entrypoint": "future isolated valid/malformed/mismatched Science Mach-O metadata fixture; executor not implemented in this node",
+      "entrypoint_id": "ENTRY-LEGACY-27",
+      "command_argv": [],
+      "cwd_mode": "repo-root",
+      "profiles": [],
+      "adapter_protocol": "legacy",
+      "timeout_seconds": null,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "desktop/src-tauri/src/runtime/science.rs",
+        "desktop/src-tauri/src/runtime/sandbox_session.rs"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "science-runtime",
+      "status": "not-yet-automatable",
+      "reason": "Parser metadata acceptance must be separated from final Mach-O signing and installed runtime evidence.",
+      "expiry": "2026-10-01",
+      "replacement_id": "SUITE-QUALITY-FOCUSED",
+      "requirement_ids": [
+        "REQ-083-MACHO-METADATA",
+        "REQ-083-EVIDENCE"
+      ],
+      "bug_ids": [
+        "BUG-083-SCIENCE-MACHO"
+      ],
+      "gate_ids": [
+        "GATE-SCIENCE-MACHO",
+        "GATE-QUALITY-RELEASE"
+      ],
+      "expected_status": "NOT-RUN",
+      "historical_case_ids": [
+        "CASE-SCIENCE-MACHO"
+      ],
+      "selection_rule": {
+        "mode": "manual",
+        "include_paths": [
+          "desktop/src-tauri/src/runtime/science.rs"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      }
+    },
+    {
+      "id": "SUITE-PRODUCT-SSH-LATE",
+      "name": "OAuth-written then SSH-failed late transaction regression",
+      "kind": "manual",
+      "entrypoint": "cargo test --offline --manifest-path desktop/src-tauri/Cargo.toml --lib commands::runtime::tests:: -- --ignored --nocapture --test-threads=1",
+      "entrypoint_id": "ENTRY-PRODUCT-SSH-LATE",
+      "command_argv": [
+        "{CARGO}",
+        "test",
+        "--offline",
+        "--manifest-path",
+        "desktop/src-tauri/Cargo.toml",
+        "--lib",
+        "commands::runtime::tests::",
+        "--",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd_mode": "repo-root",
+      "profiles": [
+        "acceptance"
+      ],
+      "adapter_protocol": "legacy",
+      "timeout_seconds": 3600,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "source_paths": [
+        "desktop/src-tauri/src/commands/runtime.rs",
+        "desktop/src-tauri/src/config.rs",
+        "desktop/src-tauri/src/lib.rs",
+        "desktop/src-tauri/src/runtime/sandbox_session.rs",
+        "desktop/src-tauri/src/runtime/science.rs",
+        "desktop/src-tauri/src/runtime/settings.rs"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "science-runtime",
+      "status": "manual",
+      "reason": "The isolated fake/local SSH-LATE Acceptance command is implemented and passed manually, but remains excluded from the fixed fifteen-suite source gate and cannot establish production artifact/runtime or real SSH/provider evidence.",
+      "expiry": "2026-10-01",
+      "replacement_id": "SUITE-RUST-DESKTOP",
+      "requirement_ids": [
+        "REQ-083-SSH-LATE",
+        "REQ-083-EVIDENCE"
+      ],
+      "bug_ids": [
+        "BUG-083-SSH-LATE"
+      ],
+      "gate_ids": [
+        "GATE-SSH-LATE",
+        "GATE-QUALITY-RELEASE"
+      ],
+      "expected_status": "NOT-RUN",
+      "historical_case_ids": [
+        "CASE-SSH-LATE"
+      ],
+      "selection_rule": {
+        "mode": "manual",
+        "include_paths": [
+          "desktop/src-tauri/src/runtime/sandbox_session.rs"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      }
+    },
+    {
+      "id": "SUITE-SOURCE-GATE-CONTRACT",
+      "name": "trusted source gate contracts and adversarial matrix",
+      "kind": "python",
+      "category": "runner",
+      "entrypoint": "python3 -m unittest discover -s test/quality -p test_source_gate_*.py -v",
+      "source_paths": [
+        "quality/schema/source-observation.v1.schema.json",
+        "test/quality/source_gate/",
+        "test/quality/test_source_gate_adversarial.py",
+        "test/quality/test_source_gate_aggregation.py",
+        "test/quality/test_source_gate_cli.py",
+        "test/quality/test_source_gate_contracts.py",
+        "test/quality/test_source_gate_runtime.py"
+      ],
+      "evidence_layer": "source-test",
+      "owner": "quality-kernel",
+      "requirement_ids": [
+        "REQ-083-SOURCE-GATE",
+        "REQ-083-SCHEMA"
+      ],
+      "bug_ids": [
+        "BUG-083-RC",
+        "BUG-083-RETRY",
+        "BUG-083-ORPHANS",
+        "BUG-083-RUST-COVERAGE"
+      ],
+      "historical_case_ids": [
+        "CASE-RC-7",
+        "CASE-LOOPBACK-42",
+        "CASE-ORPHAN-4",
+        "CASE-CARGO-4"
+      ],
+      "selection_rule": {
+        "mode": "focused",
+        "include_paths": [
+          "quality/",
+          "test/quality/source_gate/"
+        ],
+        "exclude_statuses": [
+          "legacy",
+          "manual",
+          "quarantine",
+          "retired",
+          "not-yet-automatable"
+        ]
+      },
+      "entrypoint_id": "ENTRY-SOURCE-GATE-CONTRACT",
+      "command_argv": [
+        "{PYTHON}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "test/quality",
+        "-p",
+        "test_source_gate_*.py",
+        "-v"
+      ],
+      "cwd_mode": "repo-root",
+      "profiles": [
+        "source"
+      ],
+      "adapter_protocol": "source-observation.v1",
+      "timeout_seconds": 300,
+      "readiness_timeout_seconds": null,
+      "retry_policy": "none",
+      "fixture_paths": [
+        "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "test/quality/source_gate/adapter.py"
+      ],
+      "build_recipe_paths": [],
+      "environment_allowlist": [],
+      "test_identity": {
+        "path": "test/quality/fixtures/source_gate/expected_test_ids.v1.json",
+        "sha256": "330d1aca9adbe2b2f261699c1f1ce9d9b7093b0ff07a2c4acc9df3b4f46b66a2",
+        "suite_key": "SOURCE-GATE-CONTRACT"
+      },
+      "status": "implemented",
+      "reason": null,
+      "expiry": null,
+      "replacement_id": null,
+      "gate_ids": [
+        "GATE-SOURCE"
+      ],
+      "expected_status": "PASS"
+    }
+  ],
+  "selection_rules": [
+    {
+      "name": "run-evidence-fixed-one-suite",
+      "purpose": "Execute only the catalog-bound SUITE-RUE05A focused source-unit NODE-RUN-EVIDENCE command.",
+      "suite_ids": [
+        "SUITE-RUE05A"
+      ],
+      "executor_implemented": true
+    },
+    {
+      "name": "metadata",
+      "purpose": "Validate all machine metadata and foreign-key/lifecycle invariants without requiring a clean worktree.",
+      "suite_ids": [
+        "SUITE-QUALITY-METADATA",
+        "SUITE-QUALITY-FOCUSED",
+        "SUITE-RUN-EVIDENCE-CONTRACT",
+        "SUITE-QUALITY-INVENTORY"
+      ],
+      "executor_implemented": true
+    },
+    {
+      "name": "impact-pr",
+      "purpose": "Use an explicit target ref and its merge-base to check registered production impact.",
+      "suite_ids": [
+        "SUITE-QUALITY-METADATA",
+        "SUITE-QUALITY-IMPACT",
+        "SUITE-RUN-EVIDENCE-CONTRACT",
+        "SUITE-QUALITY-INVENTORY"
+      ],
+      "executor_implemented": true
+    },
+    {
+      "name": "product-v083-open-issues",
+      "purpose": "Register the eight product issues with independent suite and gate contracts; group executor orchestration is not implemented in this node.",
+      "suite_ids": [
+        "SUITE-PRODUCT-SCIENCE-UPDATER",
+        "SUITE-PRODUCT-DEEPSEEK",
+        "SUITE-PRODUCT-DATABASE",
+        "SUITE-PRODUCT-GITHUB-BUNDLE",
+        "SUITE-PRODUCT-MCP",
+        "SUITE-PRODUCT-OPENCODE-65",
+        "SUITE-PRODUCT-MACHO",
+        "SUITE-PRODUCT-SSH-LATE"
+      ],
+      "executor_implemented": false
+    },
+    {
+      "name": "source-gate",
+      "purpose": "Execute the exact ordered source-only catalog through the trusted source observation and completion-seal path.",
+      "suite_ids": [
+        "SUITE-QUALITY-METADATA",
+        "SUITE-QUALITY-FOCUSED",
+        "SUITE-RUN-EVIDENCE-CONTRACT",
+        "SUITE-QUALITY-INVENTORY",
+        "SUITE-PY-OFFLINE",
+        "SUITE-RUST-GATEWAY",
+        "SUITE-PY-LOOPBACK",
+        "SUITE-SHELL-SCRIPTS",
+        "SUITE-RUST-DESKTOP",
+        "SUITE-RUST-CODEX-NETWORK",
+        "SUITE-RUST-SKILL-PACKAGE",
+        "SUITE-MJS-FRONTEND",
+        "SUITE-ORPHAN-SKILL-BRIDGE",
+        "SUITE-ORPHAN-SKILL-BOUNDARY",
+        "SUITE-SOURCE-GATE-CONTRACT"
+      ],
+      "executor_implemented": true
+    }
+  ]
+}

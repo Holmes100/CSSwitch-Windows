@@ -1,0 +1,583 @@
+#[derive(Clone, Debug)]
+pub struct GatewayConfig {
+    pub provider: String,
+    pub port: u16,
+    pub auth_secret: Option<String>,
+    pub api_key: Option<String>,
+    pub upstream_url: String,
+    pub models_url: Option<String>,
+    pub relay_thinking: Option<String>,
+    /// Validated contract selected by the Tauri control plane. Standalone
+    /// invocations may use the unique adapter fallback, but managed launches
+    /// always bind an exact id plus the embedded catalog digest.
+    pub(crate) provider_contract: Option<crate::provider_contracts::ProviderRuntimeContract>,
+    pub intent: GatewayIntent,
+    /// Validated, non-sensitive selector snapshot for the profile.
+    pub static_model_resolver: Option<crate::static_profile::StaticProfileResolver>,
+    pub shim_mode: String,
+    /// Opaque per-spawn identity supplied by the Tauri process manager.
+    /// Standalone invocations may leave it empty, but managed launches always set it.
+    pub launch_id: String,
+    /// CSSwitch-managed Science data-dir used only by the authenticated local
+    /// external-Skill install endpoint. Standalone gateways leave it unset.
+    pub skill_data_dir: Option<std::path::PathBuf>,
+    pub skill_bridge_dir: Option<std::path::PathBuf>,
+    /// Per-proxy HMAC key for the user-confirmed Skill filesystem bridge.
+    /// It is supplied only through the child environment and is never returned
+    /// from Gateway health or inference responses.
+    pub skill_bridge_token: Option<String>,
+    /// Verified Science runtime identity used by the local Skill attach control
+    /// plane. A gateway without this context still serves inference traffic but
+    /// does not install Skills.
+    pub science_host_context: Option<csswitch_skill_install_core::ScienceHostContext>,
+}
+
+pub const GATEWAY_INTENT_ENV: &str = "CSSWITCH_GATEWAY_INTENT";
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum GatewayIntent {
+    Formal,
+    ScratchModels,
+    ScratchMessage,
+}
+
+impl GatewayIntent {
+    fn from_env() -> Result<Self, String> {
+        match std::env::var(GATEWAY_INTENT_ENV).ok().as_deref() {
+            None | Some("") | Some("formal") => Ok(Self::Formal),
+            Some("scratch-models") => Ok(Self::ScratchModels),
+            Some("scratch-message") => Ok(Self::ScratchMessage),
+            Some(_) => Err(format!("{GATEWAY_INTENT_ENV} 非法")),
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Formal => "formal",
+            Self::ScratchModels => "scratch-models",
+            Self::ScratchMessage => "scratch-message",
+        }
+    }
+}
+
+pub const UPSTREAM_UA: &str = "CSSwitch/0.2 (+https://github.com/SuperJJ007/CSSwitch)";
+pub const DEFAULT_UPSTREAM_URL: &str = "https://api.deepseek.com/anthropic/v1/messages";
+pub const DEFAULT_QWEN_UPSTREAM_URL: &str =
+    "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
+
+pub const DEEPSEEK_MODELS: &[(&str, &str)] = &[
+    ("claude-opus-4-8", "DeepSeek V4 Pro"),
+    ("claude-haiku-4-5", "DeepSeek V4 Flash"),
+];
+
+pub const QWEN_MODELS: &[(&str, &str)] = &[
+    ("qwen3.7-max", "Qwen 3.7 Max"),
+    ("qwen-plus-latest", "Qwen Plus Latest"),
+    ("qwen-turbo", "Qwen Turbo"),
+];
+
+pub fn shim_mode(raw: Option<&str>) -> &'static str {
+    match raw.unwrap_or("").trim().to_ascii_lowercase().as_str() {
+        "detect" => "detect",
+        "rewrite" => "rewrite",
+        _ => "off",
+    }
+}
+
+/// Canonical DSML mode shared by config parsing and runtime identity.
+/// Only DeepSeek is DSML-capable; every other provider is fail-safe `off`,
+/// even when the parent environment contains a stale or polluted value.
+pub fn canonical_shim_mode(provider: &str, raw: Option<&str>) -> &'static str {
+    if provider == "deepseek" {
+        shim_mode(raw)
+    } else {
+        "off"
+    }
+}
+
+pub fn provider_supported(provider: &str, shim: &str) -> bool {
+    match provider {
+        "deepseek" => matches!(shim, "off" | "detect" | "rewrite"),
+        "qwen" | "openai-custom" | "openai-responses" | "relay" => shim == "off",
+        _ => false,
+    }
+}
+
+pub fn normalize_openai_base(base: &str) -> String {
+    let mut out = base.trim().trim_end_matches('/').to_string();
+    for suffix in [
+        "/v1/chat/completions",
+        "/chat/completions",
+        "/v1/responses",
+        "/responses",
+        "/v1/models",
+        "/models",
+    ] {
+        if out.ends_with(suffix) {
+            let keep = out.len() - suffix.len();
+            out.truncate(keep);
+            while out.ends_with('/') {
+                out.pop();
+            }
+            break;
+        }
+    }
+    out
+}
+
+fn ends_with_version_segment(base: &str) -> bool {
+    let Some(last) = base.rsplit('/').next() else {
+        return false;
+    };
+    let Some(version) = last.strip_prefix('v') else {
+        return false;
+    };
+    !version.is_empty()
+        && version
+            .split('.')
+            .all(|part| !part.is_empty() && part.chars().all(|ch| ch.is_ascii_digit()))
+}
+
+pub fn openai_endpoint(base: &str, suffix: &str) -> String {
+    let mut root = normalize_openai_base(base);
+    if !ends_with_version_segment(&root) {
+        root.push_str("/v1");
+    }
+    root.push_str(suffix);
+    root
+}
+
+fn normalize_anthropic_v1_base(base: &str) -> String {
+    let mut root = base.trim().trim_end_matches('/').to_string();
+    for suffix in ["/messages", "/models"] {
+        if root.ends_with(suffix) {
+            root.truncate(root.len() - suffix.len());
+            while root.ends_with('/') {
+                root.pop();
+            }
+            break;
+        }
+    }
+    if !root.ends_with("/v1") {
+        root.push_str("/v1");
+    }
+    root
+}
+
+fn joined_endpoints(
+    join: crate::provider_contracts::EndpointJoin,
+    transport: &str,
+    base: &str,
+) -> Result<(String, Option<String>), String> {
+    use crate::provider_contracts::EndpointJoin;
+
+    let inference_suffix = match transport {
+        "anthropic_messages" => "/messages",
+        "openai_chat" => "/chat/completions",
+        "openai_responses" => "/responses",
+        _ => return Err("provider contract transport cannot use a profile endpoint".into()),
+    };
+    match join {
+        EndpointJoin::AnthropicV1 => {
+            if transport != "anthropic_messages" {
+                return Err("anthropic endpoint join requires Anthropic transport".into());
+            }
+            let root = normalize_anthropic_v1_base(base);
+            Ok((format!("{root}/messages"), Some(format!("{root}/models"))))
+        }
+        EndpointJoin::OpenaiV1 => {
+            if !matches!(transport, "openai_chat" | "openai_responses") {
+                return Err("OpenAI endpoint join requires OpenAI transport".into());
+            }
+            Ok((
+                openai_endpoint(base, inference_suffix),
+                Some(openai_endpoint(base, "/models")),
+            ))
+        }
+        EndpointJoin::OpenaiPath => {
+            if !matches!(transport, "openai_chat" | "openai_responses") {
+                return Err("OpenAI path join requires OpenAI transport".into());
+            }
+            let root = normalize_openai_base(base);
+            Ok((
+                format!("{root}{inference_suffix}"),
+                Some(format!("{root}/models")),
+            ))
+        }
+        EndpointJoin::ManagedOfficial => {
+            Err("managed official endpoint cannot use a profile base".into())
+        }
+    }
+}
+
+fn upstream_url_for(
+    provider: &str,
+    default_upstream: String,
+    override_raw: Option<String>,
+) -> String {
+    if matches!(provider, "deepseek" | "qwen") {
+        override_raw
+            .filter(|v| !v.trim().is_empty())
+            .unwrap_or(default_upstream)
+    } else {
+        default_upstream
+    }
+}
+
+impl GatewayConfig {
+    pub fn from_env_args(args: Vec<String>) -> Result<Self, String> {
+        let mut provider = "deepseek".to_string();
+        let mut port: Option<u16> = None;
+        let mut auth_token_arg: Option<String> = None;
+
+        let mut i = 1;
+        while i < args.len() {
+            match args[i].as_str() {
+                "--provider" => {
+                    i += 1;
+                    provider = args.get(i).ok_or("--provider 缺少值")?.clone();
+                }
+                "--port" => {
+                    i += 1;
+                    let raw = args.get(i).ok_or("--port 缺少值")?;
+                    port = Some(raw.parse().map_err(|_| format!("非法端口：{raw}"))?);
+                }
+                "--auth-token" => {
+                    i += 1;
+                    auth_token_arg = Some(args.get(i).ok_or("--auth-token 缺少值")?.clone());
+                }
+                other => return Err(format!("未知参数：{other}")),
+            }
+            i += 1;
+        }
+
+        let shim = canonical_shim_mode(
+            &provider,
+            std::env::var("CSSWITCH_TOOLUSE_SHIM").ok().as_deref(),
+        );
+        if !provider_supported(&provider, shim) {
+            return Err(format!(
+                "只支持 deepseek + shim off/detect/rewrite 或 qwen/openai-custom/openai-responses/relay + shim off（provider={provider}, shim={shim}）"
+            ));
+        }
+
+        let expected_contract_id = std::env::var("CSSWITCH_PROVIDER_CONTRACT_ID").ok();
+        let expected_contract_digest = std::env::var("CSSWITCH_PROVIDER_CONTRACT_DIGEST").ok();
+        let provider_contract = crate::provider_contracts::load_runtime_contract(
+            &provider,
+            expected_contract_id.as_deref(),
+            expected_contract_digest.as_deref(),
+        )?;
+        let key_env = provider_contract.api_key_env.as_deref().unwrap_or("");
+        let api_key = match provider_contract.auth_mode.as_str() {
+            "csswitch_oauth" | "none" => None,
+            "api_key" => Some(
+                std::env::var(key_env)
+                    .ok()
+                    .map(|v| v.trim().to_string())
+                    .filter(|v| !v.is_empty())
+                    .ok_or_else(|| format!("缺少 {key_env}"))?,
+            ),
+            _ => return Err("provider contract auth mode is unsupported".into()),
+        };
+        let auth_secret = std::env::var("CSSWITCH_AUTH_TOKEN")
+            .ok()
+            .filter(|v| !v.is_empty())
+            .or(auth_token_arg)
+            .filter(|v| !v.is_empty());
+        let mut models_url = None;
+        let mut relay_thinking = None;
+        let default_upstream = if provider_contract.endpoint_policy == "profile_required" {
+            let base_env = if matches!(
+                provider_contract.transport.as_str(),
+                "openai_chat" | "openai_responses"
+            ) {
+                "CSSWITCH_OPENAI_BASE_URL"
+            } else {
+                "CSSWITCH_RELAY_BASE_URL"
+            };
+            let base = std::env::var(base_env)
+                .ok()
+                .map(|value| value.trim().trim_end_matches('/').to_string())
+                .filter(|v| {
+                    !v.is_empty() && (v.starts_with("http://") || v.starts_with("https://"))
+                })
+                .ok_or_else(|| format!("{provider} 需要 {base_env}=http(s)://..."))?;
+            let (inference, discovered_models) = joined_endpoints(
+                provider_contract.endpoint_join,
+                &provider_contract.transport,
+                &base,
+            )?;
+            models_url = discovered_models;
+            if provider_contract.transport == "anthropic_messages" {
+                relay_thinking = std::env::var("CSSWITCH_RELAY_THINKING")
+                    .ok()
+                    .map(|v| v.trim().to_string())
+                    .filter(|v| !v.is_empty());
+            }
+            inference
+        } else if provider == "qwen" {
+            DEFAULT_QWEN_UPSTREAM_URL.to_string()
+        } else {
+            DEFAULT_UPSTREAM_URL.to_string()
+        };
+        let upstream_url = upstream_url_for(
+            &provider,
+            default_upstream,
+            std::env::var("CSSWITCH_UPSTREAM_URL").ok(),
+        );
+        let launch_id = std::env::var("CSSWITCH_LAUNCH_ID")
+            .unwrap_or_default()
+            .trim()
+            .to_string();
+        let managed_launch_id = (24..=128).contains(&launch_id.len())
+            && launch_id.chars().all(|value| value.is_ascii_hexdigit());
+        if managed_launch_id
+            && (expected_contract_id.is_none() || expected_contract_digest.is_none())
+        {
+            return Err(
+                "managed gateway launch requires an exact provider contract identity".into(),
+            );
+        }
+        let skill_data_dir = std::env::var_os("CSSWITCH_SKILL_DATA_DIR")
+            .map(std::path::PathBuf::from)
+            .filter(|path| path.is_absolute());
+        let skill_bridge_dir = std::env::var_os("CSSWITCH_SKILL_BRIDGE_DIR")
+            .map(std::path::PathBuf::from)
+            .filter(|path| path.is_absolute());
+        let skill_bridge_token =
+            std::env::var("CSSWITCH_SKILL_BRIDGE_TOKEN")
+                .ok()
+                .filter(|value| {
+                    value.len() == 64
+                        && value.chars().all(|character| character.is_ascii_hexdigit())
+                });
+        let science_host_context = std::env::var("CSSWITCH_SCIENCE_HOST_CONTEXT")
+            .ok()
+            .filter(|value| !value.trim().is_empty())
+            .map(|value| {
+                serde_json::from_str::<csswitch_skill_install_core::ScienceHostContext>(&value)
+                    .map_err(|_| "CSSWITCH_SCIENCE_HOST_CONTEXT 不是合法的 Science host context")
+            })
+            .transpose()?;
+        if science_host_context
+            .as_ref()
+            .zip(skill_data_dir.as_ref())
+            .is_some_and(|(context, data_dir)| &context.data_dir != data_dir)
+        {
+            return Err("Science host context 与 Skill data-dir 不一致".into());
+        }
+        let static_model_resolver = std::env::var(crate::static_profile::ENV_NAME)
+            .ok()
+            .filter(|value| !value.trim().is_empty())
+            .map(|value| crate::static_profile::StaticProfileResolver::from_json(&value))
+            .transpose()?;
+        let intent = GatewayIntent::from_env()?;
+        match intent {
+            GatewayIntent::Formal | GatewayIntent::ScratchMessage => {
+                let resolver = static_model_resolver.as_ref().ok_or_else(|| {
+                    format!("{provider} 缺少 {}", crate::static_profile::ENV_NAME)
+                })?;
+                if resolver.adapter() != provider {
+                    return Err("静态模型目录 adapter 与 gateway provider 不一致".into());
+                }
+            }
+            GatewayIntent::ScratchModels if static_model_resolver.is_some() => {
+                return Err("scratch-models 禁止注入静态模型目录".into());
+            }
+            GatewayIntent::ScratchModels => {}
+        }
+        Ok(Self {
+            provider,
+            port: port.ok_or("--port 必填")?,
+            auth_secret,
+            api_key,
+            upstream_url,
+            models_url,
+            relay_thinking,
+            provider_contract: Some(provider_contract),
+            intent,
+            static_model_resolver,
+            shim_mode: shim.to_string(),
+            launch_id,
+            skill_data_dir,
+            skill_bridge_dir,
+            skill_bridge_token,
+            science_host_context,
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        canonical_shim_mode, joined_endpoints, normalize_openai_base, openai_endpoint,
+        provider_supported, shim_mode, upstream_url_for,
+    };
+    use crate::provider_contracts::EndpointJoin;
+
+    #[test]
+    fn shim_mode_parses_deepseek_off_contract() {
+        assert_eq!(shim_mode(None), "off");
+        assert_eq!(shim_mode(Some("Detect")), "detect");
+        assert_eq!(shim_mode(Some(" Rewrite ")), "rewrite");
+        assert_eq!(shim_mode(Some("bad")), "off");
+    }
+
+    #[test]
+    fn canonical_shim_mode_is_deepseek_only_and_fail_safe() {
+        for (raw, expected) in [
+            (None, "off"),
+            (Some(" DETECT "), "detect"),
+            (Some(" Rewrite "), "rewrite"),
+            (Some("unknown"), "off"),
+        ] {
+            assert_eq!(canonical_shim_mode("deepseek", raw), expected);
+        }
+        for provider in [
+            "qwen",
+            "openai-custom",
+            "openai-responses",
+            "relay",
+            "unknown",
+        ] {
+            assert_eq!(canonical_shim_mode(provider, Some(" Rewrite ")), "off");
+            assert_eq!(canonical_shim_mode(provider, Some("DETECT")), "off");
+        }
+    }
+
+    #[test]
+    fn provider_support_matrix_accepts_only_canonical_shims() {
+        assert!(provider_supported("deepseek", "off"));
+        assert!(provider_supported("deepseek", "detect"));
+        assert!(provider_supported("deepseek", "rewrite"));
+        assert!(provider_supported("qwen", "off"));
+        assert!(!provider_supported("qwen", "detect"));
+        assert!(provider_supported("openai-custom", "off"));
+        assert!(provider_supported("openai-responses", "off"));
+        assert!(provider_supported("relay", "off"));
+        assert!(!provider_supported("relay", "rewrite"));
+    }
+
+    #[test]
+    fn openai_base_normalization_matches_python_proxy_contract() {
+        let root = "https://open.bigmodel.cn/api/paas/v4";
+        assert_eq!(
+            normalize_openai_base(&format!("{root}/chat/completions")),
+            root
+        );
+        assert_eq!(normalize_openai_base(&format!("{root}/responses")), root);
+        assert_eq!(normalize_openai_base(&format!("{root}/models")), root);
+        assert_eq!(openai_endpoint(root, "/models"), format!("{root}/models"));
+        assert_eq!(
+            openai_endpoint("https://api.siliconflow.cn", "/chat/completions"),
+            "https://api.siliconflow.cn/v1/chat/completions"
+        );
+    }
+
+    #[test]
+    fn endpoint_join_policies_cover_full_urls_xai_gemini_and_opencode() {
+        assert_eq!(
+            joined_endpoints(EndpointJoin::OpenaiV1, "openai_chat", "https://api.x.ai/v1").unwrap(),
+            (
+                "https://api.x.ai/v1/chat/completions".into(),
+                Some("https://api.x.ai/v1/models".into())
+            )
+        );
+        assert_eq!(
+            joined_endpoints(
+                EndpointJoin::OpenaiV1,
+                "openai_chat",
+                "https://api.x.ai/v1/chat/completions"
+            )
+            .unwrap()
+            .0,
+            "https://api.x.ai/v1/chat/completions"
+        );
+        assert_eq!(
+            joined_endpoints(
+                EndpointJoin::OpenaiPath,
+                "openai_chat",
+                "https://generativelanguage.googleapis.com/v1beta/openai"
+            )
+            .unwrap(),
+            (
+                "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions".into(),
+                Some("https://generativelanguage.googleapis.com/v1beta/openai/models".into())
+            )
+        );
+        assert_eq!(
+            joined_endpoints(
+                EndpointJoin::AnthropicV1,
+                "anthropic_messages",
+                "https://opencode.ai/zen/go/v1/messages"
+            )
+            .unwrap(),
+            (
+                "https://opencode.ai/zen/go/v1/messages".into(),
+                Some("https://opencode.ai/zen/go/v1/models".into())
+            )
+        );
+        assert_eq!(
+            joined_endpoints(
+                EndpointJoin::AnthropicV1,
+                "anthropic_messages",
+                "https://opencode.ai/zen/go/v1"
+            )
+            .unwrap(),
+            (
+                "https://opencode.ai/zen/go/v1/messages".into(),
+                Some("https://opencode.ai/zen/go/v1/models".into())
+            )
+        );
+        assert_eq!(
+            joined_endpoints(
+                EndpointJoin::AnthropicV1,
+                "anthropic_messages",
+                "https://relay.example.test/anthropic"
+            )
+            .unwrap(),
+            (
+                "https://relay.example.test/anthropic/v1/messages".into(),
+                Some("https://relay.example.test/anthropic/v1/models".into())
+            )
+        );
+    }
+
+    #[test]
+    fn upstream_override_is_native_only() {
+        let poison = Some("http://127.0.0.1:1/poison".to_string());
+        assert_eq!(
+            upstream_url_for(
+                "deepseek",
+                "https://default/deepseek".to_string(),
+                poison.clone()
+            ),
+            "http://127.0.0.1:1/poison"
+        );
+        assert_eq!(
+            upstream_url_for("qwen", "https://default/qwen".to_string(), poison.clone()),
+            "http://127.0.0.1:1/poison"
+        );
+        assert_eq!(
+            upstream_url_for(
+                "openai-custom",
+                "http://candidate/v1/chat/completions".to_string(),
+                poison.clone()
+            ),
+            "http://candidate/v1/chat/completions"
+        );
+        assert_eq!(
+            upstream_url_for(
+                "openai-responses",
+                "http://candidate/v1/responses".to_string(),
+                poison.clone()
+            ),
+            "http://candidate/v1/responses"
+        );
+        assert_eq!(
+            upstream_url_for("relay", "http://candidate/v1/messages".to_string(), poison),
+            "http://candidate/v1/messages"
+        );
+    }
+}

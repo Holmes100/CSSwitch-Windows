@@ -1,0 +1,12 @@
+{
+  "name": "desktop",
+  "private": true,
+  "version": "0.8.4",
+  "type": "module",
+  "scripts": {
+    "tauri": "node ./clean-bundle-resources.mjs && tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

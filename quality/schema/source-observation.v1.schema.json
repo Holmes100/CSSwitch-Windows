@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://csswitch.local/schema/source-observation.v1.schema.json",
+  "title": "Source observation v1",
+  "$defs": {
+    "RunId": {"type": "string", "pattern": "^[0-9a-f]{32}(?![\\s\\S])", "minLength": 32, "maxLength": 32},
+    "Sha": {"type": "string", "pattern": "^[0-9a-f]{64}(?![\\s\\S])", "minLength": 64, "maxLength": 64},
+    "SuiteId": {"type": "string", "pattern": "^SUITE-[A-Z0-9][A-Z0-9-]{0,31}(?![\\s\\S])", "maxLength": 38},
+    "EntrypointId": {"type": "string", "pattern": "^ENTRY-[A-Z0-9][A-Z0-9-]{0,31}(?![\\s\\S])", "maxLength": 38},
+    "Count": {"type": "integer", "minimum": 0, "maximum": 1000000},
+    "TestId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^(?!.*[\\u0000-\\u001f\\u007f]).+$(?![\\s\\S])"
+    },
+    "TestIds": {
+      "type": "array",
+      "maxItems": 1000000,
+      "items": {"$ref": "#/$defs/TestId"}
+    },
+    "Output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bytes", "sha256", "truncated"],
+      "properties": {
+        "bytes": {"type": "integer", "minimum": 0, "maximum": 67108864},
+        "sha256": {"$ref": "#/$defs/Sha"},
+        "truncated": {"type": "boolean"}
+      }
+    },
+    "DerivedTool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "mode", "size", "sha256"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 4096,
+          "pattern": "^/(?!.*[\\u0000-\\u001f\\u007f]).+$(?![\\s\\S])"
+        },
+        "mode": {"const": "0755"},
+        "size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 134217728
+        },
+        "sha256": {"$ref": "#/$defs/Sha"}
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "run_id", "suite_id", "entrypoint_id", "attempt_index",
+    "command_argv_sha256", "environment_sha256", "tool_identity_sha256",
+    "raw_process", "adapter_exit", "executed", "passed", "failed", "skipped",
+    "ignored", "todo", "not_run", "discovered_test_ids", "executed_test_ids",
+    "failed_test_ids", "skipped_test_ids", "ignored_test_ids",
+    "todo_test_ids", "not_run_test_ids",
+    "stdout", "stderr", "derived_tool", "outcome_hint",
+    "classification_hint", "reason_code"
+  ],
+  "properties": {
+    "schema": {"const": "source-observation.v1"},
+    "run_id": {"$ref": "#/$defs/RunId"},
+    "suite_id": {"$ref": "#/$defs/SuiteId"},
+    "entrypoint_id": {"$ref": "#/$defs/EntrypointId"},
+    "attempt_index": {"const": 0},
+    "command_argv_sha256": {"$ref": "#/$defs/Sha"},
+    "environment_sha256": {"$ref": "#/$defs/Sha"},
+    "tool_identity_sha256": {"$ref": "#/$defs/Sha"},
+    "raw_process": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "process_exit"],
+          "properties": {"state": {"const": "EXITED"}, "process_exit": {"type": "integer", "minimum": 0, "maximum": 255}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "process_signal"],
+          "properties": {"state": {"const": "SIGNALED"}, "process_signal": {"type": "integer", "minimum": 1, "maximum": 255}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state"],
+          "properties": {"state": {"enum": ["PRE_EXEC_FAILED", "HARD_TIMEOUT", "OUTPUT_LIMIT", "REAP_FAILED", "TERMINAL_DRAIN_INCOMPLETE", "PROCESS_GROUP_CLEANUP_FAILED"]}}
+        }
+      ]
+    },
+    "adapter_exit": {"type": "integer", "enum": [0, 10, 11, 12, 13]},
+    "executed": {"$ref": "#/$defs/Count"},
+    "passed": {"$ref": "#/$defs/Count"},
+    "failed": {"$ref": "#/$defs/Count"},
+    "skipped": {"$ref": "#/$defs/Count"},
+    "ignored": {"$ref": "#/$defs/Count"},
+    "todo": {"$ref": "#/$defs/Count"},
+    "not_run": {"$ref": "#/$defs/Count"},
+    "discovered_test_ids": {"$ref": "#/$defs/TestIds"},
+    "executed_test_ids": {"$ref": "#/$defs/TestIds"},
+    "failed_test_ids": {"$ref": "#/$defs/TestIds"},
+    "skipped_test_ids": {"$ref": "#/$defs/TestIds"},
+    "ignored_test_ids": {"$ref": "#/$defs/TestIds"},
+    "todo_test_ids": {"$ref": "#/$defs/TestIds"},
+    "not_run_test_ids": {"$ref": "#/$defs/TestIds"},
+    "stdout": {"$ref": "#/$defs/Output"},
+    "stderr": {"$ref": "#/$defs/Output"},
+    "derived_tool": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/DerivedTool"}
+      ]
+    },
+    "outcome_hint": {"enum": ["PASS", "FAIL", "BLOCKED"]},
+    "classification_hint": {"enum": ["NONE", "ENVIRONMENT", "REAL_MACHINE", "QUARANTINED", "INFRA"]},
+    "reason_code": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]{0,63}(?![\\s\\S])",
+      "maxLength": 64
+    }
+  }
+}

@@ -1,0 +1,543 @@
+{
+  "schema_version": 1,
+  "source_kind": "current-tracked-markdown",
+  "source_commit": "e7ed05e039881b87b02899d81156252000174a01",
+  "source_tree": "16befe7157c5aae78c56a2155c126c9a11abd043",
+  "document_count": 89,
+  "documents": [
+    {
+      "path": ".agents/context/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "e7f6ece67e8a56084552b405dca3a8f9262c4121"
+    },
+    {
+      "path": ".agents/context/current-release.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "a39e44f4755e3d99d0b223f937820e44d5804f43"
+    },
+    {
+      "path": ".agents/context/document-audit.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "a644147e811d48ab5cf0802705c8e64d2e3b02dc"
+    },
+    {
+      "path": ".agents/context/known-issues.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "6c65395dee15bee1f6941ce647544cb3d4e16862"
+    },
+    {
+      "path": ".agents/context/verified-state.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "e8cf30b55a8a30e03bd2f793045015006a4a8220"
+    },
+    {
+      "path": ".agents/context/worktrees.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "2f992797e0a5bb6d448bc766a36b2a5ba4341879"
+    },
+    {
+      "path": ".agents/handoffs/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "86c28718212235e329167caf24d6b18ad7e5e67f"
+    },
+    {
+      "path": ".agents/rules/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "c3a7541e19923ea37157fadfb10ac5c34b0e07b3"
+    },
+    {
+      "path": ".agents/rules/external-skills.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "d38e3cbd38173fe107adb2e62b39de029b3a4eb0"
+    },
+    {
+      "path": ".agents/rules/git-worktrees.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "8d02b9c9679c58c695bf5757d9bb770e37a24f54"
+    },
+    {
+      "path": ".agents/rules/release.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "601f85eaa10223cc12424b447f47f1d71c2d9a0b"
+    },
+    {
+      "path": ".agents/rules/safety.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "bcbcc0bbc58df1a5bda90fc8299a3fe66d39a08a"
+    },
+    {
+      "path": ".agents/rules/science-runtime.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "c17235ad853c83514aaac452b41fd95091adc4b5"
+    },
+    {
+      "path": ".agents/rules/system-ssh.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "ec89ffc09768c6d398d666b150580ce0dc1a8d2b"
+    },
+    {
+      "path": ".agents/rules/testing-and-evidence.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "0f9592c7ddf219936abee18e21b9f038c5a8be4b"
+    },
+    {
+      "path": "AGENTS.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "3f773cd839487f0a4aa84cef1ac5792a41a966d6"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "a6441d8ec31d9a5752a2494305609b65d5c4edc7"
+    },
+    {
+      "path": "CLAUDE.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "1edc6baa0cbe37f5fb527de1eb95462efed97775"
+    },
+    {
+      "path": "README.en.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "48df51c31f7b8cdc3ff40fa4b2b259f8b250bc42"
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "96c8318a715ec02515151cb4a57795bff22f1ba7"
+    },
+    {
+      "path": "desktop/src-tauri/resources/skills/csswitch-external-skill-tools/SKILL.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "4b54995cb421e29f3fb6110e3afe39ef49ad790d"
+    },
+    {
+      "path": "desktop/src-tauri/resources/skills/csswitch-external-skill-tools/legacy-bundle-pre-progress.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "496937c74ecdcd75c08a0c23159ee5e5e07c0c19"
+    },
+    {
+      "path": "desktop/src-tauri/resources/skills/csswitch-external-skill-tools/legacy-bundle-progress-v1.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "8b2dd4c5e477f9d716ae6f4a7c6010443f28f666"
+    },
+    {
+      "path": "desktop/src-tauri/resources/skills/csswitch-external-skill-tools/legacy-revision2.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "441610b17ef124f9a5df9446d7d1e250436e8a02"
+    },
+    {
+      "path": "desktop/src-tauri/resources/skills/csswitch-external-skill-tools/legacy-split-connectors.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "6da0a77ac48fbf6ec9a77dad3ab1a738d1147de2"
+    },
+    {
+      "path": "desktop/src/assets/model-icons/LICENSES.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "e4783a2e6d0bc2c6280c19ff2cac6004ceb1863d"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "11599ca2c11c081acdbaaa965687777f30a0662c"
+    },
+    {
+      "path": "docs/DEVELOPMENT.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "82e05f39402f84c3148330fc4cb8dce9a1f7d080"
+    },
+    {
+      "path": "docs/EXTERNAL_SKILL_INSTALL.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "a3fc5aca72bde363551a84a61d0f2f593b3a320a"
+    },
+    {
+      "path": "docs/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "9b5a140538d48585f5eb69aca3afff01bb3f2c31"
+    },
+    {
+      "path": "docs/RELEASE.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "8c9c07179a4dc3db6f38ef5fc75f8ea836955c77"
+    },
+    {
+      "path": "docs/SCIENCE_RUNTIME.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "39800f0e4084e994ce4b5d9c031d86dff154c551"
+    },
+    {
+      "path": "docs/architecture/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "89da2d9f2a57a65ae18af91d8bf78015492959d6"
+    },
+    {
+      "path": "docs/architecture/overview.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "d108750623e92e941abb302c41540fffaaca48d8"
+    },
+    {
+      "path": "docs/architecture/science-runtime.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "3b028bc3a996d37eaacd5a691583be0f257aeedb"
+    },
+    {
+      "path": "docs/audits/v080-change-audit.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "3b6526a55da18b15edfa56e96a328043f7176fbf"
+    },
+    {
+      "path": "docs/audits/v081-change-audit.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "eeee53ebec2f9c10f1ddda3dea3f12e1bc680510"
+    },
+    {
+      "path": "docs/audits/v082-change-audit.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "f4b9977af190f3e2c0e2a64b79125aa0dd82c9da"
+    },
+    {
+      "path": "docs/audits/v083-test-system-audit.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "8e83497893b66ff923b18285638fac13223d88eb"
+    },
+    {
+      "path": "docs/evidence/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "f4a6d0427d63755029e20589e7b49688817fcb9e"
+    },
+    {
+      "path": "docs/evidence/investigations/2026-07-13-science-runtime-and-skill-bridge.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "e08a4947533c5d93f6eb5e86b9171e530e92d7b1"
+    },
+    {
+      "path": "docs/evidence/investigations/2026-07-16-codex-acceptance-preparation.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "51e3c500c220a00a79d596d7f56c7fb0d924b558"
+    },
+    {
+      "path": "docs/evidence/investigations/2026-07-16-codex-science-bridge-baseline.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "d4cdd5a02e57a71442c40b2ef062b0957a3dd04e"
+    },
+    {
+      "path": "docs/evidence/investigations/2026-07-16-codex-science-model-compat.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "ff58260be911571d62c640a6424566c115fdb556"
+    },
+    {
+      "path": "docs/evidence/investigations/2026-07-17-codex-browser-only-acceptance.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "5ac9990fb60004c2c94c2d58f7a4317a54481386"
+    },
+    {
+      "path": "docs/evidence/investigations/2026-07-18-v070-model-catalog-gateway-review.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "d327e20fa9b8a562df34ac4af915116b15900751"
+    },
+    {
+      "path": "docs/evidence/investigations/2026-07-18-v070-model-catalog-lifecycle-science-review.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "b7a0bf04b550838349c8bf6bdcc029f7167b9d7f"
+    },
+    {
+      "path": "docs/evidence/investigations/2026-07-18-v070-model-catalog-schema-review.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "8a6a3360913a6d2e179bedb5b48419b55fd40342"
+    },
+    {
+      "path": "docs/evidence/investigations/2026-07-18-v070-model-catalog-scoped-final-review.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "9517a388d81aee392c2f5bbdcab3863acd94bcd7"
+    },
+    {
+      "path": "docs/evidence/investigations/2026-07-18-v070-model-catalog-stage0.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "84df5e740003055ce288b9392b8d57f87202af9f"
+    },
+    {
+      "path": "docs/evidence/investigations/2026-07-18-v070-model-catalog-ui-acceptance-review.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "614b2e560ea678c147d37dee3ba0edf039de2b40"
+    },
+    {
+      "path": "docs/evidence/investigations/2026-07-18-v070-ui-redesign-api-provider-review.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "b1b1e976f04ca03582b507cfb00053f78600a2de"
+    },
+    {
+      "path": "docs/evidence/investigations/2026-07-18-v070-ui-redesign-codex-review.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "8f6f0dd4038729e929ff3de10bba1129ebe129ee"
+    },
+    {
+      "path": "docs/evidence/investigations/2026-07-18-v070-ui-redesign-review.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "00802f4d94a69e75af4a7a64df7e1826bb18bee4"
+    },
+    {
+      "path": "docs/evidence/investigations/2026-07-18-v070-ui-redesign-runtime-security-review.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "12dd474ee91437950d0f6cf5c81a53687aaf1f07"
+    },
+    {
+      "path": "docs/evidence/investigations/2026-07-18-v070-ui-redesign-skill-mcp-review.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "126d29e09a1ae9deeca3a0f6440372ab966285a7"
+    },
+    {
+      "path": "docs/evidence/investigations/2026-07-18-v070-ui-redesign-ui-packaging-review.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "16c8cc12fd30da41b6bfa092334d1578789f5584"
+    },
+    {
+      "path": "docs/evidence/investigations/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "d6a8624e10978eff2fa08c807885417b709f581f"
+    },
+    {
+      "path": "docs/evidence/releases/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "616e8ae7be452683d29c8b455d1818458405f1a5"
+    },
+    {
+      "path": "docs/evidence/releases/v0.4.2.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "d54edfbfbdf24593f77e4f59bfeab88fc2aa8e09"
+    },
+    {
+      "path": "docs/evidence/releases/v0.5.0.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "615cf8eff247ad7cd4697a80f9be45487b3ed765"
+    },
+    {
+      "path": "docs/evidence/releases/v0.6.0.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "d50eba11122f365b053225de494ed3e2cae05677"
+    },
+    {
+      "path": "docs/evidence/releases/v0.7.0.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "4e171387225e9991328f978e117272ee248b4057"
+    },
+    {
+      "path": "docs/evidence/releases/v0.8.0.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "f45efe0be5aa1aceeeef97bff2cebb2127027060"
+    },
+    {
+      "path": "docs/evidence/releases/v0.8.1-linux-x64.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "c830023aeeb9a4c006fb470d3ef07c0e086b07e1"
+    },
+    {
+      "path": "docs/evidence/releases/v0.8.1.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "56330145872617a8fd052c4628e84820c01b4a6c"
+    },
+    {
+      "path": "docs/evidence/releases/v0.8.2.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "744bab391bf6cfd0a8f684d879b1c89fcb03d05b"
+    },
+    {
+      "path": "docs/features/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "841b2f167abd53d63df71158ce9b45814ccef358"
+    },
+    {
+      "path": "docs/features/codex-browser-login-models-implementation-plan.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "111f5c2b5f797f5a7a1516d5808a3da63063d727"
+    },
+    {
+      "path": "docs/features/codex-science-bridge.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "18509b112e69f3b2a9fcc76f77816564081fb3cc"
+    },
+    {
+      "path": "docs/features/external-skill-bridge.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "81d4d7fd135a0faf6a7b8b6ec7bcbd76d054ab76"
+    },
+    {
+      "path": "docs/features/system-ssh.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "5d229fb99acac0035356d578b807507921340cff"
+    },
+    {
+      "path": "docs/features/ui-information-architecture.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "6baa860b7d66f5fa443fc26707b847ae8e5c2aca"
+    },
+    {
+      "path": "docs/features/v081-provider-compatibility.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "bd3da1a6bf0b74c3837305d3ab97dcdd2c982fe4"
+    },
+    {
+      "path": "docs/operations/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "227f78c2b636aeed4f9694826d0ac6912fb944ad"
+    },
+    {
+      "path": "docs/operations/development.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "808f04495841def71048586cf8a47b30c8872237"
+    },
+    {
+      "path": "docs/operations/quality-kernel.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "729980bd05b06a4d4b4ccf7bce90e3f247d885bd"
+    },
+    {
+      "path": "docs/operations/quality-source-gate.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "b75f3d5c4d0a6354881c4febbb11fe7e37d2d934"
+    },
+    {
+      "path": "docs/operations/real-machine-acceptance.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "806246f4955e2245764873b8bb7e1477d88468b3"
+    },
+    {
+      "path": "docs/operations/release.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "861147615de3326f10012ab1a34be8215933f950"
+    },
+    {
+      "path": "docs/operations/testing.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "1782d89f4ab3478460d547b21d49817627702945"
+    },
+    {
+      "path": "docs/operations/upgrade-and-rollback.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "bd2464de6bd01b34403933d79fca42a2e86a4ff3"
+    },
+    {
+      "path": "docs/references/CSNATIVE.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "1e7e3459a9c85bc971ac993cb38007f459d3f58f"
+    },
+    {
+      "path": "docs/references/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "72fa5262eee5fe7bb54d21f85c80cc3aeec3f6ba"
+    },
+    {
+      "path": "docs/references/external/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "c2b2953db2c5e77ab62262d65bc2dc77f1a7f526"
+    },
+    {
+      "path": "docs/references/external/csnative.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "43a1f6ff3753b4618602b8f18d0c1bee32c0f13a"
+    },
+    {
+      "path": "docs/release-evidence-v0.4.2.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "7fc74113e05d44d6e4e9077795033f1849ab698a"
+    },
+    {
+      "path": "docs/upgrade-and-rollback.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "d109a8c2a182d24f086153441ee13cd6cc303a91"
+    },
+    {
+      "path": "test/REAL_MACHINE_TEST.md",
+      "mode": "100644",
+      "type": "blob",
+      "blob": "e2e2ea28ffb2673b60b78c612347d46310894b93"
+    }
+  ]
+}

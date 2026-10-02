@@ -1,0 +1,25 @@
+{
+  "schema": "bug-record.v1",
+  "bug": {
+    "id": "BUG-083-DATABASE-ERROR",
+    "version": "v0.8.3",
+    "title": "Database access errors have no closed ownership and recovery claim",
+    "summary": "Database access errors are recorded without reading or mutating any real user database; ownership, migration, and recovery evidence remain open.",
+    "status": "active",
+    "owner": "runtime-state",
+    "severity": "P1",
+    "claim_state": "unknown",
+    "reproduction_state": "not-run-current-target",
+    "resolution_state": "open-not-fixed",
+    "affected_paths": ["desktop/src-tauri/src/config.rs", "desktop/src-tauri/src/runtime/transaction.rs", "docs/audits/v082-change-audit.md"],
+    "requirement_ids": ["REQ-083-DATABASE-ERROR", "REQ-083-EVIDENCE"],
+    "change_ids": ["CHG-DATABASE-ERROR"],
+    "expected_suite_ids": ["SUITE-PRODUCT-DATABASE", "SUITE-QUALITY-FOCUSED"],
+    "expected_gate_ids": ["GATE-DATABASE-ERROR", "GATE-QUALITY-RELEASE"],
+    "evidence_boundary": {"allowed_layers": ["source-test"], "excluded_layers": ["final-dmg", "installed-final", "live", "signing", "public"], "basis": ["docs/audits/v082-change-audit.md", "no real database access"]},
+    "reproduction": {"state": "not-run-current-target", "steps": ["Use a temporary fixture to model the reported access error.", "Do not open, enumerate, copy, or mutate a real user database."], "observed": "Database ownership and current runtime impact are unknown in this source-only node.", "not_claimed": ["final-dmg", "installed-final", "live", "signing", "public"]},
+    "confirmed_facts": [{"statement": "The database-access issue is explicitly registered as an independent v0.8.3 requirement, change, and bug tuple.", "evidence_ref": "quality/requirements.v1.json", "verification_status": "confirmed"}],
+    "hypotheses": [{"statement": "A runtime ownership or migration boundary may cause the reported access error; the current target has not been run.", "evidence_ref": "docs/audits/v082-change-audit.md", "verification_status": "unknown"}],
+    "retirement": null
+  }
+}

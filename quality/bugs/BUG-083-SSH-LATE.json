@@ -1,0 +1,103 @@
+{
+  "schema": "bug-record.v1",
+  "bug": {
+    "id": "BUG-083-SSH-LATE",
+    "version": "v0.8.3",
+    "title": "SSH late-failure transaction must preserve or exactly compensate every authority",
+    "summary": "Source repair now performs every prevalidatable SSH check before OAuth mutation, rechecks the exact serialized launch authority, and exactly compensates OAuth, active profile, Gateway, Science, managed SSH stub, journal, and durable cleanup state after a true late failure. Production artifact/runtime and real SSH/provider evidence remain pending.",
+    "status": "active",
+    "owner": "science-runtime",
+    "severity": "P0",
+    "claim_state": "confirmed",
+    "reproduction_state": "source-reproduced",
+    "resolution_state": "source-fixed-product-pending",
+    "affected_paths": [
+      "desktop/src-tauri/src/commands/runtime.rs",
+      "desktop/src-tauri/src/config.rs",
+      "desktop/src-tauri/src/lib.rs",
+      "desktop/src-tauri/src/runtime/sandbox_session.rs",
+      "desktop/src-tauri/src/runtime/science.rs",
+      "desktop/src-tauri/src/runtime/settings.rs"
+    ],
+    "requirement_ids": [
+      "REQ-083-SSH-LATE",
+      "REQ-083-EVIDENCE"
+    ],
+    "change_ids": [
+      "CHG-SSH-LATE"
+    ],
+    "expected_suite_ids": [
+      "SUITE-PRODUCT-SSH-LATE",
+      "SUITE-RUST-DESKTOP"
+    ],
+    "expected_gate_ids": [
+      "GATE-SSH-LATE",
+      "GATE-SOURCE"
+    ],
+    "evidence_boundary": {
+      "allowed_layers": [
+        "source-test"
+      ],
+      "excluded_layers": [
+        "isolated-test-app",
+        "final-dmg",
+        "installed-final",
+        "live",
+        "signing",
+        "public"
+      ],
+      "basis": [
+        ".agents/rules/system-ssh.md",
+        "frozen old-product red, restored source green, two product-only mutations, and fresh dual final review",
+        "fake credentials, fake Science, local Gateway, temporary HOME, and loopback-only Acceptance"
+      ]
+    },
+    "reproduction": {
+      "state": "source-reproduced; production artifact/runtime and real SSH/provider pending",
+      "steps": [
+        "Use a temporary HOME, fake OAuth authority, fake Science, local Gateway, dynamic loopback ports, and a managed or foreign sandbox SSH state.",
+        "Block the lifecycle serializer after one operation-scoped preflight; drift either the Codex union authority or the exact non-Codex candidate Config and credential.",
+        "Inject a true late failure after OAuth and runtime mutation, including prior owned Gateway, prior managed Science, absent or pre-existing managed V2 stub, journal, cleanup degradation, and retry cases.",
+        "Require typed config_changed_retry before candidate publication on serialized drift, or exact compensation of every old authority followed by an idempotent retry."
+      ],
+      "observed": "The exact old product failed the frozen late-compensation oracle. Repaired source passed default 390/0/27, all 20 ignored commands::runtime Acceptance tests, the expanded 28/28 authority-edge matrix, the ten-case prevalidation matrix, two exact successor tests, restored product-only mutations, and fresh final PASS/PASS review.",
+      "not_claimed": [
+        "isolated-test-app",
+        "final-dmg",
+        "installed-final",
+        "live",
+        "signing",
+        "public"
+      ]
+    },
+    "confirmed_facts": [
+      {
+        "statement": "One operation-scoped Codex proof covers both the candidate and any alive owned prior Gateway rollback context; the serialized section rechecks the prior child, launch identity, key fingerprint, full launch context, and the exact candidate authority.",
+        "evidence_ref": "desktop/src-tauri/src/commands/runtime.rs::commands::runtime::tests::isolated_real_ipc_rechecks_union_proof_after_serializer_wait",
+        "verification_status": "confirmed"
+      },
+      {
+        "statement": "The private serialized non-Codex path rechecks the exact candidate Config and credential and rejects drift before Gateway, Science, OAuth, journal, or stub mutation.",
+        "evidence_ref": "desktop/src-tauri/src/commands/runtime.rs::commands::runtime::tests::isolated_real_ipc_rechecks_non_codex_credential_after_serializer_wait",
+        "verification_status": "confirmed"
+      },
+      {
+        "statement": "All SSH config, wrapper, sandbox authority, and managed-stub checks that can be completed early now run before OAuth mutation.",
+        "evidence_ref": "desktop/src-tauri/src/commands/runtime.rs::commands::runtime::tests::isolated_ssh_prevalidation_precedes_oauth_mutation",
+        "verification_status": "confirmed"
+      },
+      {
+        "statement": "A true late failure restores or exactly compensates OAuth, active profile, Gateway, Science, journal, managed stub including a pre-existing managed V2 file, and durable cleanup state; retry is idempotent and foreign SSH state remains unchanged.",
+        "evidence_ref": "desktop/src-tauri/src/commands/runtime.rs::commands::runtime::tests::isolated_ssh_late_failure_compensates_every_authority_and_retry_is_idempotent",
+        "verification_status": "confirmed"
+      },
+      {
+        "statement": "Failure diagnostics expose typed safe codes without raw credentials, key material, private paths, or nested rollback errors.",
+        "evidence_ref": "desktop/src-tauri/src/commands/runtime.rs::commands::runtime::tests::isolated_compensation_diagnostics_are_credential_free",
+        "verification_status": "confirmed"
+      }
+    ],
+    "hypotheses": [],
+    "retirement": null
+  }
+}

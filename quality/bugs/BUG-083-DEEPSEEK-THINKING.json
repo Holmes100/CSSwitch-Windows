@@ -1,0 +1,25 @@
+{
+  "schema": "bug-record.v1",
+  "bug": {
+    "id": "BUG-083-DEEPSEEK-THINKING",
+    "version": "v0.8.3",
+    "title": "DeepSeek Pro thinking multi-round returns HTTP 400",
+    "summary": "DeepSeek Pro thinking multi-round behavior is registered as an open compatibility issue; local mock or source tests do not prove provider-layer resolution.",
+    "status": "active",
+    "owner": "gateway",
+    "severity": "P1",
+    "claim_state": "confirmed",
+    "reproduction_state": "historical-observed",
+    "resolution_state": "open-not-fixed",
+    "affected_paths": ["desktop/gateway/src/openai_responses.rs", "desktop/gateway/src/server.rs", "test/test_gateway_rust.py"],
+    "requirement_ids": ["REQ-083-DEEPSEEK-THINKING", "REQ-083-EVIDENCE"],
+    "change_ids": ["CHG-DEEPSEEK-THINKING"],
+    "expected_suite_ids": ["SUITE-PRODUCT-DEEPSEEK", "SUITE-QUALITY-FOCUSED"],
+    "expected_gate_ids": ["GATE-DEEPSEEK-THINKING", "GATE-QUALITY-RELEASE"],
+    "evidence_boundary": {"allowed_layers": ["source-test"], "excluded_layers": ["final-dmg", "installed-final", "live", "signing", "public"], "basis": ["product issue registration", "docs/audits/v082-change-audit.md"]},
+    "reproduction": {"state": "historical-observed; provider rerun not authorized here", "steps": ["Use a deterministic source or mock fixture for a multi-round thinking request.", "Keep any real provider/API-key execution outside this node."], "observed": "The reported product symptom is HTTP 400 on DeepSeek Pro thinking multi-round; no current provider result is asserted.", "not_claimed": ["final-dmg", "installed-final", "live", "signing", "public"]},
+    "confirmed_facts": [{"statement": "The supplied product audit records HTTP 400 as the historical DeepSeek Pro thinking multi-round symptom.", "evidence_ref": "docs/audits/v082-change-audit.md", "verification_status": "confirmed"}],
+    "hypotheses": [],
+    "retirement": null
+  }
+}

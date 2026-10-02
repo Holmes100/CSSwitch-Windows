@@ -1,0 +1,91 @@
+{
+  "schema": "change-record.v1",
+  "change": {
+    "id": "CHG-SOURCE-GATE",
+    "version": "v0.8.3",
+    "title": "Migrate the complete source catalog to the trusted source gate",
+    "summary": "Adds the closed source-observation ABI, exact fifteen-suite source selection, exact discovered/executed identity inventory, sequential no-retry execution, evidence binding, fixed source CLI, current-source private gateway derivation for loopback, a capacity-checked short private source TMPDIR for Darwin AF_UNIX fixtures, and legacy S0 retirement. The change closes only test-system false-green paths and does not change product behavior.",
+    "status": "active",
+    "owner": "quality-kernel",
+    "changed_paths": [
+      "quality/",
+      "test/quality/",
+      "desktop/skill-package/src/science.rs",
+      "desktop/skill-package/src/github.rs",
+      "desktop/src-tauri/src/commands/runtime.rs",
+      "test/test_provider_mock_scenarios.py",
+      "test/test_skill_runtime_boundary.py",
+      "test/run_all.sh",
+      "docs/operations/quality-kernel.md",
+      "docs/operations/quality-source-gate.md",
+      "docs/README.md"
+    ],
+    "requirement_ids": [
+      "REQ-083-SCHEMA",
+      "REQ-083-VALIDATOR",
+      "REQ-083-INVENTORY",
+      "REQ-083-EVIDENCE",
+      "REQ-083-FOCUSED",
+      "REQ-083-SOURCE-GATE"
+    ],
+    "bug_ids": [
+      "BUG-083-RC",
+      "BUG-083-RETRY",
+      "BUG-083-ORPHANS",
+      "BUG-083-RUST-COVERAGE"
+    ],
+    "test_impact": {
+      "kind": "add",
+      "required_suite_ids": [
+        "SUITE-QUALITY-METADATA",
+        "SUITE-QUALITY-FOCUSED",
+        "SUITE-QUALITY-IMPACT",
+        "SUITE-RUN-EVIDENCE-CONTRACT",
+        "SUITE-QUALITY-INVENTORY",
+        "SUITE-PY-OFFLINE",
+        "SUITE-RUST-GATEWAY",
+        "SUITE-PY-LOOPBACK",
+        "SUITE-SHELL-SCRIPTS",
+        "SUITE-RUST-DESKTOP",
+        "SUITE-RUST-CODEX-NETWORK",
+        "SUITE-RUST-SKILL-PACKAGE",
+        "SUITE-MJS-FRONTEND",
+        "SUITE-ORPHAN-SKILL-BRIDGE",
+        "SUITE-ORPHAN-SKILL-BOUNDARY",
+        "SUITE-SOURCE-GATE-CONTRACT"
+      ],
+      "required_gate_ids": [
+        "GATE-SOURCE",
+        "GATE-QUALITY-META",
+        "GATE-QUALITY-PR",
+        "GATE-QUALITY-RELEASE"
+      ],
+      "risk_classes": [
+        "P0",
+        "release-gate",
+        "migration",
+        "source-only"
+      ]
+    },
+    "claim_state": "confirmed",
+    "evidence_boundary": {
+      "allowed_layers": ["source-test"],
+      "excluded_layers": [
+        "isolated-test-app",
+        "final-dmg",
+        "installed-final",
+        "live",
+        "signing",
+        "public"
+      ],
+      "basis": [
+        "docs/operations/quality-source-gate.md",
+        "source-gate contract and adversarial tests",
+        "Darwin AF_UNIX source-TMPDIR capacity and binding regressions",
+        "completion-seal authority"
+      ]
+    },
+    "does_not_claim_fix": true,
+    "retirement": null
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "schema": "bug-record.v1",
+  "bug": {
+    "id": "BUG-083-RESPONSES-CORE",
+    "version": "v0.8.3",
+    "title": "OpenAI Responses core compatibility is not independently closed",
+    "summary": "GitHub issue 56 is too broad to close as one provider claim. v0.8.3 only commits to Responses text, two-turn continuity, and function tools, split by protocol and provider fixture.",
+    "status": "active",
+    "owner": "gateway",
+    "severity": "P1",
+    "claim_state": "confirmed",
+    "reproduction_state": "not-run-current-target",
+    "resolution_state": "open-not-fixed",
+    "affected_paths": [
+      "desktop/gateway/src/openai_responses.rs",
+      "desktop/gateway/src/server.rs",
+      "test/test_gateway_rust.py",
+      "test/test_installed_provider_matrix.py"
+    ],
+    "requirement_ids": [
+      "REQ-083-RESPONSES-CORE",
+      "REQ-083-EVIDENCE"
+    ],
+    "change_ids": [
+      "CHG-RESPONSES-CORE"
+    ],
+    "expected_suite_ids": [
+      "SUITE-RUST-GATEWAY",
+      "SUITE-PY-LOOPBACK"
+    ],
+    "expected_gate_ids": [
+      "GATE-RESPONSES-CORE",
+      "GATE-SOURCE"
+    ],
+    "evidence_boundary": {
+      "allowed_layers": [
+        "source-test"
+      ],
+      "excluded_layers": [
+        "isolated-test-app",
+        "final-dmg",
+        "installed-final",
+        "live",
+        "signing",
+        "public"
+      ],
+      "basis": [
+        "GitHub issue 56 refreshed read-only on 2026-07-27",
+        "v0.8.3 core scope limits Responses to text, two-turn, and function tools"
+      ]
+    },
+    "reproduction": {
+      "state": "not-run-current-target",
+      "steps": [
+        "Run fixed local protocol mocks separately for Responses text, two-turn state continuity, and function call/result.",
+        "Record provider adapter and model mapping independently from protocol conformance.",
+        "Do not use image, proprietary reasoning, native streaming, or structured-output results to pass or fail this core gate."
+      ],
+      "observed": "Issue 56 remains open, but no current-target failure has yet been attributed to one of the three bounded Responses core rows.",
+      "not_claimed": [
+        "isolated-test-app",
+        "final-dmg",
+        "installed-final",
+        "live",
+        "signing",
+        "public"
+      ]
+    },
+    "confirmed_facts": [
+      {
+        "statement": "GitHub issue 56 remains open and the approved v0.8.3 plan limits its blocking scope to three Responses core behaviors.",
+        "evidence_ref": "https://github.com/SuperJJ007/CSSwitch/issues/56",
+        "verification_status": "confirmed"
+      }
+    ],
+    "hypotheses": [
+      {
+        "statement": "One or more bounded Responses rows may already pass on the current target and should not trigger a product edit.",
+        "evidence_ref": "current-target isolated retest pending",
+        "verification_status": "NOT-RUN"
+      }
+    ],
+    "retirement": null
+  }
+}

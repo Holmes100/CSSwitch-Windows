@@ -1,0 +1,87 @@
+{
+  "schema": "bug-record.v1",
+  "bug": {
+    "id": "BUG-083-GATEWAY-RECOVERY",
+    "version": "v0.8.3",
+    "title": "Owned Gateway external exit lacks bounded identity-safe recovery",
+    "summary": "GitHub issue 12 reports that Gateway disappearance is presented as a misleading permission failure. The core repair requires accurate failure state and at most one identity- and generation-bound recovery attempt.",
+    "status": "active",
+    "owner": "runtime-state",
+    "severity": "P0",
+    "claim_state": "confirmed",
+    "reproduction_state": "historical-observed",
+    "resolution_state": "open-not-fixed",
+    "affected_paths": [
+      "desktop/src-tauri/src/runtime/gateway.rs",
+      "desktop/src-tauri/src/runtime/sandbox_session.rs",
+      "desktop/src-tauri/src/runtime/state.rs",
+      "desktop/src-tauri/src/commands/runtime.rs",
+      "test/test_gateway_rust.py"
+    ],
+    "requirement_ids": [
+      "REQ-083-GATEWAY-RECOVERY",
+      "REQ-083-EVIDENCE"
+    ],
+    "change_ids": [
+      "CHG-GATEWAY-RECOVERY"
+    ],
+    "expected_suite_ids": [
+      "SUITE-RUST-DESKTOP",
+      "SUITE-PY-LOOPBACK"
+    ],
+    "expected_gate_ids": [
+      "GATE-GATEWAY-RECOVERY",
+      "GATE-SOURCE"
+    ],
+    "evidence_boundary": {
+      "allowed_layers": [
+        "source-test"
+      ],
+      "excluded_layers": [
+        "isolated-test-app",
+        "final-dmg",
+        "installed-final",
+        "live",
+        "signing",
+        "public"
+      ],
+      "basis": [
+        "GitHub issue 12 refreshed read-only on 2026-07-27",
+        "current-target source red not established yet"
+      ]
+    },
+    "reproduction": {
+      "state": "historical-observed; isolated owned-child kill fixture pending",
+      "steps": [
+        "Start a fake owned Gateway using temporary state, fake secrets, and a dynamic loopback port.",
+        "Kill only that exact owned child and observe the Desktop runtime state transition.",
+        "Permit one restart only when config generation, executable identity, ownership record, and path-secret identity are unchanged.",
+        "Inject generation drift, identity drift, and a second exit; assert no retry loop and no profile, journal, or secret drift."
+      ],
+      "observed": "Issue 12 reports a generic 403 or permission-style symptom after the proxy process exits instead of an accurate Gateway failure and recovery path.",
+      "not_claimed": [
+        "isolated-test-app",
+        "final-dmg",
+        "installed-final",
+        "live",
+        "signing",
+        "public"
+      ]
+    },
+    "confirmed_facts": [
+      {
+        "statement": "GitHub issue 12 remains open and describes Gateway external exit with misleading user-visible failure.",
+        "evidence_ref": "https://github.com/SuperJJ007/CSSwitch/issues/12",
+        "verification_status": "confirmed"
+      }
+    ],
+    "hypotheses": [
+      {
+        "statement": "The current runtime owner may not supervise the Gateway child after initial startup.",
+        "evidence_ref": "current-target source red pending",
+        "verification_status": "NOT-RUN"
+      }
+    ],
+    "retirement": null
+  }
+}

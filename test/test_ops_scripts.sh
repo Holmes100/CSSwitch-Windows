@@ -1,0 +1,158 @@
+#!/usr/bin/env bash
+# 运维三件套回归：doctor（只读诊断）/ verify-proxy（校验运行中代理）/ self-test（离线套件包装）。
+# 全程不碰真实 ~/.claude-science、不启动 Science、不联网上游。verify-proxy 只打 /health 与
+# /v1/models（这两个端点由代理本地作答，不触发任何上游调用，零花费）。
+set -u
+FAILS=0
+ok() { echo "ok - $1"; }
+no() { echo "NOT ok - $1"; FAILS=$((FAILS+1)); }
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+DOCTOR="$ROOT/scripts/doctor.sh"
+VERIFY="$ROOT/scripts/verify-proxy.sh"
+SELFTEST="$ROOT/scripts/self-test.sh"
+CLEAN="$ROOT/scripts/clean-bundle-resources.sh"
+GATEWAY="$ROOT/desktop/gateway/target/debug/csswitch-gateway"
+T="$(mktemp -d)"
+cleanup_bundle_test_artifacts() {
+  rm -f "$ROOT/scripts/csswitch-clean-test.pyc" "$ROOT/scripts/csswitch-clean-test.pyo"
+}
+trap cleanup_bundle_test_artifacts EXIT
+
+# ---------- doctor ----------
+# 正常：依赖齐全（本机有 python3/node），config 指向不存在的临时路径 → 退出 0
+out="$(CSSWITCH_GATEWAY_BIN="$GATEWAY" CSSWITCH_CONFIG="$T/nope.json" SCIENCE_BIN="$T/no-bin" "$DOCTOR" 2>&1)"; rc=$?
+if [ $rc -eq 0 ]; then ok "doctor exits 0 when deps present"; else no "doctor failed with deps present (rc=$rc): $out"; fi
+if echo "$out" | grep -q "$HOME/.claude-science"; then no "doctor default probed real HOME path"; else ok "doctor skips real HOME check by default"; fi
+REAL_HOME_TMP="$T/real-home-optin"; mkdir -p "$REAL_HOME_TMP/.claude-science"
+out="$(HOME="$REAL_HOME_TMP" CSSWITCH_DOCTOR_CHECK_REAL_HOME=1 CSSWITCH_CONFIG="$T/nope.json" SCIENCE_BIN="$T/no-bin" "$DOCTOR" 2>&1)"; rc=$?
+if [ $rc -eq 0 ] && echo "$out" | grep -q "显式 opt-in"; then ok "doctor real HOME check is explicit opt-in"; else no "doctor opt-in real HOME check drifted (rc=$rc): $out"; fi
+
+# 铁律：代理端口设成 8765 → 必须失败关闭，输出含 8765
+out="$(CSSWITCH_PROXY_PORT=8765 CSSWITCH_CONFIG="$T/nope.json" "$DOCTOR" 2>&1)"; rc=$?
+if [ $rc -ne 0 ] && echo "$out" | grep -q "8765"; then ok "doctor fails on reserved port 8765"; else no "doctor did not reject 8765 (rc=$rc): $out"; fi
+if [ "$(python3 "$ROOT/test/_capability.py")" != "1" ]; then
+  echo "skip - doctor occupied-port classification env-blocked（loopback 被禁）"
+else
+  PORT_FILE="$T/doctor-listener-port"
+  python3 - "$PORT_FILE" <<'PY' &
+import socket, sys, time
+s = socket.socket()
+s.bind(("127.0.0.1", 0))
+s.listen(1)
+with open(sys.argv[1], "w", encoding="utf-8") as f:
+    f.write(str(s.getsockname()[1]))
+try:
+    time.sleep(10)
+finally:
+    s.close()
+PY
+  LISTENER_PID=$!
+  for _ in $(seq 1 50); do [ -s "$PORT_FILE" ] && break; sleep 0.1; done
+  OCC_PORT="$(cat "$PORT_FILE" 2>/dev/null || true)"
+  out="$(CSSWITCH_PROXY_PORT="$OCC_PORT" CSSWITCH_CONFIG="$T/nope.json" "$DOCTOR" 2>&1)"; rc=$?
+  kill "$LISTENER_PID" 2>/dev/null; wait "$LISTENER_PID" 2>/dev/null
+  if echo "$out" | grep -q "unbound variable"; then no "doctor occupied-port diagnostic hit set -u error"; else ok "doctor occupied-port diagnostic avoids set -u error"; fi
+  if [ $rc -eq 0 ] && echo "$out" | grep -q "疑似 CSSwitch 旧进程"; then ok "doctor classifies python listener as CSSwitch-like occupied port"; else no "doctor occupied-port classification drifted (rc=$rc): $out"; fi
+fi
+
+# key present 契约：app 传 CSSWITCH_KEY_PRESENT=1 + provider/adapter，doctor 报「已配置」且绝不打印任何 key 值
+SECRETVAL="DUMMY-KEY-abc123XYZ-should-never-print"
+out="$(DEEPSEEK_API_KEY="$SECRETVAL" CSSWITCH_PROVIDER=deepseek CSSWITCH_ADAPTER=deepseek CSSWITCH_KEY_PRESENT=1 CSSWITCH_CONFIG="$T/nope.json" "$DOCTOR" 2>&1)"; rc=$?
+if echo "$out" | grep -q "$SECRETVAL"; then no "doctor LEAKED key value"; else ok "doctor never prints key value"; fi
+if echo "$out" | grep -q "已配置"; then ok "doctor reports key present (已配置)"; else no "doctor did not report key present: $out"; fi
+# 反面：不传 KEY_PRESENT → 应报「尚未填 key」，不得报「已配置」
+out2="$(CSSWITCH_PROVIDER=deepseek CSSWITCH_ADAPTER=deepseek CSSWITCH_CONFIG="$T/nope.json" "$DOCTOR" 2>&1)"
+if echo "$out2" | grep -q "尚未填 key"; then ok "doctor reports key absent when KEY_PRESENT unset"; else no "doctor absent-key wording drift: $out2"; fi
+
+# Codex OAuth 契约：只说明 CSSwitch 私有文件 OAuth；不能误写成 config.json 中有 key。
+out3="$(CSSWITCH_PROVIDER=codex CSSWITCH_ADAPTER=codex CSSWITCH_AUTH_MODE=csswitch_oauth CSSWITCH_KEY_PRESENT=1 CSSWITCH_CONFIG="$T/nope.json" "$DOCTOR" 2>&1)"
+if echo "$out3" | grep -q "CSSwitch 私有文件 OAuth"; then ok "doctor reports Codex OAuth credential class"; else no "doctor missed Codex OAuth credential class: $out3"; fi
+if echo "$out3" | grep -q "key 已配置在 config.json"; then no "doctor misreported Codex OAuth as config key"; else ok "doctor never reports Codex OAuth as config key"; fi
+
+# config 权限：0644 → 警告应为 600（不改变退出码，仍 0）
+CFG644="$T/cfg644.json"; echo '{}' > "$CFG644"; chmod 644 "$CFG644"
+out="$(CSSWITCH_CONFIG="$CFG644" "$DOCTOR" 2>&1)"; rc=$?
+if echo "$out" | grep -q "600"; then ok "doctor warns on non-600 config perms"; else no "doctor missed bad config perms: $out"; fi
+
+# config 是符号链接 → 拒绝（失败关闭）
+CFGLINK="$T/cfglink.json"; ln -s "$CFG644" "$CFGLINK"
+out="$(CSSWITCH_CONFIG="$CFGLINK" "$DOCTOR" 2>&1)"; rc=$?
+if [ $rc -ne 0 ] && echo "$out" | grep -q "符号链接"; then ok "doctor rejects symlinked config"; else no "doctor accepted symlinked config (rc=$rc): $out"; fi
+
+# ---------- verify-proxy ----------
+out="$("$VERIFY" --port 8765 --secret anything 2>&1)"; rc=$?
+if [ $rc -ne 0 ] && echo "$out" | grep -q "8765"; then ok "verify-proxy rejects reserved port 8765"; else no "verify-proxy did not reject 8765 (rc=$rc): $out"; fi
+
+if [ "$(python3 "$ROOT/test/_capability.py")" != "1" ]; then
+  echo "skip - verify-proxy 段 env-blocked（loopback 被禁，无法起临时代理）"
+else
+# 找一个空闲端口，起一个真代理（假 key，上游 URL 是假的但不会被 /health、/v1/models 触及）
+P="$(python3 -c 'import socket;s=socket.socket();s.bind(("127.0.0.1",0));print(s.getsockname()[1]);s.close()')"
+SEC="verify-test-secret"
+STATIC_CATALOG="$(PYTHONPATH="$ROOT" python3 - <<'PY'
+import json
+
+from test.test_gateway_rust import static_catalog_fingerprint
+
+selector = "claude-csswitch-verify-deepseek-111111111111"
+catalog = {
+    "schema_version": 1,
+    "adapter": "deepseek",
+    "default_selector_id": selector,
+    "routes": [{
+        "selector_id": selector,
+        "display_name": "DeepSeek Verify",
+        "upstream_model": "deepseek-v4-flash",
+        "supports_tools": True,
+    }],
+    "role_bindings": {role: selector for role in ("sonnet", "opus", "haiku", "fable")},
+    "legacy_aliases": [],
+}
+catalog["catalog_fp"] = static_catalog_fingerprint(catalog)
+print(json.dumps(catalog, separators=(",", ":"), sort_keys=True))
+PY
+)"
+DEEPSEEK_API_KEY=fake CSSWITCH_AUTH_TOKEN="$SEC" CSSWITCH_LAUNCH_ID=ops-test \
+  CSSWITCH_TOOLUSE_SHIM=off CSSWITCH_UPSTREAM_URL="http://127.0.0.1:1/never" \
+  CSSWITCH_STATIC_MODEL_CATALOG_V1="$STATIC_CATALOG" \
+  "$GATEWAY" --provider deepseek --port "$P" \
+  >/dev/null 2>&1 &
+PROXY_PID=$!
+# 等健康
+up=0
+for _ in $(seq 1 50); do
+  if curl -s -m 2 "http://127.0.0.1:$P/$SEC/health" 2>/dev/null | grep -q '"ok"'; then up=1; break; fi
+  sleep 0.1
+done
+if [ "$up" = "1" ]; then ok "test proxy came up"; else no "test proxy did not start"; fi
+
+out="$("$VERIFY" --port "$P" --secret "$SEC" 2>&1)"; rc=$?
+if [ $rc -eq 0 ] && echo "$out" | grep -q "代理校验通过"; then ok "verify-proxy passes on healthy proxy"; else no "verify-proxy failed on healthy proxy (rc=$rc): $out"; fi
+
+out="$("$VERIFY" --port "$P" 2>&1)"; rc=$?
+if [ $rc -ne 0 ]; then ok "verify-proxy fails without required secret (403)"; else no "verify-proxy passed without secret (rc=$rc): $out"; fi
+
+kill "$PROXY_PID" 2>/dev/null; wait "$PROXY_PID" 2>/dev/null
+out="$("$VERIFY" --port "$P" --secret "$SEC" 2>&1)"; rc=$?
+if [ $rc -ne 0 ] && echo "$out" | grep -q "✗"; then ok "verify-proxy fails when proxy is down"; else no "verify-proxy passed with proxy down (rc=$rc): $out"; fi
+fi   # end verify-proxy loopback-gate
+
+# ---------- self-test ----------
+# 只做静态检查（不实跑，避免和 run_all 递归）：可执行 + 委派给 run_all.sh
+if [ -x "$SELFTEST" ]; then ok "self-test.sh is executable"; else no "self-test.sh not executable"; fi
+if grep -q "run_all.sh" "$SELFTEST"; then ok "self-test delegates to run_all.sh"; else no "self-test does not delegate to run_all.sh"; fi
+
+# ---------- bundle resource cleanup ----------
+: > "$ROOT/scripts/csswitch-clean-test.pyc"
+: > "$ROOT/scripts/csswitch-clean-test.pyo"
+out="$("$CLEAN" 2>&1)"; rc=$?
+if [ $rc -eq 0 ]; then ok "clean-bundle-resources exits 0"; else no "clean-bundle-resources failed (rc=$rc): $out"; fi
+if [ ! -e "$ROOT/scripts/csswitch-clean-test.pyc" ] \
+  && [ ! -e "$ROOT/scripts/csswitch-clean-test.pyo" ]; then
+  ok "clean-bundle-resources removes pycache artifacts from bundled dirs"
+else
+  no "clean-bundle-resources left pycache artifacts behind"
+fi
+
+echo "----"
+if [ $FAILS -eq 0 ]; then echo "ALL PASS"; exit 0; else echo "$FAILS FAILED"; exit 1; fi

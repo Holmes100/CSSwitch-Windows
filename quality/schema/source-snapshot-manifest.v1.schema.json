@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://csswitch.local/schema/source-snapshot-manifest.v1.schema.json",
+  "title": "Source snapshot manifest v1",
+  "$defs": {
+    "RunId": {"type": "string", "pattern": "^[0-9a-f]{32}(?![\\s\\S])", "minLength": 32, "maxLength": 32},
+    "GitSha": {"type": "string", "pattern": "^[0-9a-f]{40}(?![\\s\\S])", "minLength": 40, "maxLength": 40},
+    "Sha": {"type": "string", "pattern": "^[0-9a-f]{64}(?![\\s\\S])", "minLength": 64, "maxLength": 64},
+    "Path": {"type": "string", "pattern": "^(?!/)(?!.*[\\u0000-\\u001f\\u007f])(?!.*(?:^|/)(?:\\.|\\.\\.)(?:/|$))(?!.*(?:^|/)(?:/|$)).{1,240}$(?![\\s\\S])", "minLength": 1, "maxLength": 240}
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "run_id", "head_sha", "snapshot_mode", "entry_count", "total_bytes", "entries"],
+  "properties": {
+    "schema": {"const": "source-snapshot-manifest.v1"},
+    "run_id": {"$ref": "#/$defs/RunId"},
+    "head_sha": {"$ref": "#/$defs/GitSha"},
+    "snapshot_mode": {"enum": ["clean-commit", "focused-overlay"]},
+    "entry_count": {"type": "integer", "minimum": 0, "maximum": 50000},
+    "total_bytes": {"type": "integer", "minimum": 0, "maximum": 1073741824},
+    "entries": {"type": "array", "maxItems": 50000, "items": {"type": "object", "additionalProperties": false, "required": ["path", "type", "mode", "size", "sha256"], "properties": {"path": {"$ref": "#/$defs/Path"}, "type": {"enum": ["file", "symlink"]}, "mode": {"enum": ["100644", "100755", "120000"]}, "size": {"type": "integer", "minimum": 0, "maximum": 67108864}, "sha256": {"$ref": "#/$defs/Sha"}, "symlink_target": {"type": "string", "minLength": 1, "maxLength": 240}}}}
+  }
+}

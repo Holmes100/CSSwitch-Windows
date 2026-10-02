@@ -1,0 +1,38 @@
+{
+  "schema": "bug-record.v1",
+  "bug": {
+    "id": "BUG-083-SCIENCE-MACHO",
+    "version": "v0.8.3",
+    "title": "Science Mach-O metadata is incorrectly rejected",
+    "summary": "CSSwitch v0.8.3 rejected a valid Science 0.1.25 App-seeded executable at the fixed updater path because it allowed only the standalone updater identifier. The v0.8.4 source accepts both exact observed identifiers with the same exact Team ID while retaining all file, Mach-O, snapshot, and source-stability guards; final artifact, installed, public, signing, and live layers remain separate.",
+    "status": "active",
+    "owner": "science-runtime",
+    "severity": "P1",
+    "claim_state": "confirmed",
+    "reproduction_state": "source-reproduced",
+    "resolution_state": "source-fixed-product-pending",
+    "affected_paths": ["desktop/src-tauri/src/runtime/science.rs", "desktop/src-tauri/src/runtime/sandbox_session.rs", "test/run_all.sh"],
+    "requirement_ids": ["REQ-083-MACHO-METADATA", "REQ-083-SCIENCE-UPDATER", "REQ-083-EVIDENCE"],
+    "change_ids": ["CHG-SCIENCE-MACHO"],
+    "expected_suite_ids": ["SUITE-PRODUCT-MACHO", "SUITE-QUALITY-FOCUSED"],
+    "expected_gate_ids": ["GATE-SCIENCE-MACHO", "GATE-QUALITY-RELEASE"],
+    "evidence_boundary": {
+      "allowed_layers": ["source-test"],
+      "excluded_layers": ["isolated-test-app", "final-dmg", "installed-final", "live", "signing", "public"],
+      "basis": [".agents/rules/science-runtime.md", "field App-seeded 0.1.25 executable metadata", "exact parser regression", "isolated real-updater snapshot and version oracle"]
+    },
+    "reproduction": {
+      "state": "source-reproduced; product artifact and later layers pending",
+      "steps": ["Place the App-seeded Science 0.1.25 executable at the fixed updater path in an isolated HOME.", "Observe v0.8.3 reject its exact com.anthropic.operon.cli identifier despite the expected Team ID and Mach-O format.", "Accept the two exact observed identifiers, retain all surrounding guards, and rerun the parser and isolated real-updater snapshot/version oracles."],
+      "observed": "The v0.8.3 source rejects the valid App-seeded fixed-path form. The v0.8.4 source accepts that exact form, creates and revalidates its SHA-256 content-addressed snapshot, and still rejects unknown or spoofed metadata.",
+      "not_claimed": ["isolated-test-app", "final-dmg", "installed-final", "live", "signing", "public"]
+    },
+    "confirmed_facts": [
+      {"statement": "The field Science 0.1.25 updater and installed-App seed are byte-identical, arm64 Mach-O, SHA-256 63b0f57aa3b9588ba9e61433d27c78df788f8fe2c1b51842db107d6697e9c03f, Identifier com.anthropic.operon.cli, and Team ID Q6L2SF6YDW.", "evidence_ref": "docs/evidence/investigations/2026-07-28-claude-science-0.1.25-compatibility.md", "verification_status": "confirmed"},
+      {"statement": "The v0.8.4 source accepts both exact observed updater identifiers and independently rejects unknown identifiers, wrong Team IDs, identifier prefix spoofing, and Team ID suffix spoofing.", "evidence_ref": "desktop/src-tauri/src/runtime/science.rs::runtime::science::tests::official_updater_identity_parser_accepts_only_known_exact_variants", "verification_status": "confirmed"},
+      {"statement": "The App-seeded 0.1.25 fixed-path executable passes the complete isolated candidate-to-snapshot-to-version source oracle without reading real Science data.", "evidence_ref": "desktop/src-tauri/src/runtime/science.rs::runtime::science::tests::real_updated_runtime_candidate_is_eligible_without_reading_real_science_data", "verification_status": "confirmed"}
+    ],
+    "hypotheses": [],
+    "retirement": null
+  }
+}

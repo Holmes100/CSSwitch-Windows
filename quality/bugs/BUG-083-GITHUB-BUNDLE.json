@@ -1,0 +1,25 @@
+{
+  "schema": "bug-record.v1",
+  "bug": {
+    "id": "BUG-083-GITHUB-BUNDLE",
+    "version": "v0.8.3",
+    "title": "GitHub Skill bundle reports BUNDLE_STRUCTURE_UNSUPPORTED",
+    "summary": "The GitHub Skill bundle structure failure is tracked independently from archive parsing, local fixtures, public GitHub, installation, and invocation claims.",
+    "status": "active",
+    "owner": "skill-package",
+    "severity": "P1",
+    "claim_state": "confirmed",
+    "reproduction_state": "historical-observed",
+    "resolution_state": "open-not-fixed",
+    "affected_paths": ["desktop/skill-package/src/github.rs", "desktop/skill-package/src/archive.rs", "test/test_external_skill_install_bridge.py"],
+    "requirement_ids": ["REQ-083-GITHUB-BUNDLE", "REQ-083-EVIDENCE"],
+    "change_ids": ["CHG-GITHUB-BUNDLE"],
+    "expected_suite_ids": ["SUITE-PRODUCT-GITHUB-BUNDLE", "SUITE-QUALITY-FOCUSED"],
+    "expected_gate_ids": ["GATE-GITHUB-BUNDLE", "GATE-QUALITY-RELEASE"],
+    "evidence_boundary": {"allowed_layers": ["source-test"], "excluded_layers": ["isolated-test-app", "final-dmg", "installed-final", "live", "signing", "public"], "basis": ["product issue registration", "Skill package source boundary"]},
+    "reproduction": {"state": "historical-observed; public GitHub not accessed", "steps": ["Use a temporary archive fixture with the reported bundle shape.", "Distinguish structure rejection from install and invocation outcomes."], "observed": "BUNDLE_STRUCTURE_UNSUPPORTED remains an open product claim; no public or installed Skill result is asserted.", "not_claimed": ["isolated-test-app", "final-dmg", "installed-final", "live", "signing", "public"]},
+    "confirmed_facts": [{"statement": "The supplied product audit records BUNDLE_STRUCTURE_UNSUPPORTED as an independent GitHub Skill bundle issue.", "evidence_ref": "docs/audits/v082-change-audit.md", "verification_status": "confirmed"}],
+    "hypotheses": [],
+    "retirement": null
+  }
+}

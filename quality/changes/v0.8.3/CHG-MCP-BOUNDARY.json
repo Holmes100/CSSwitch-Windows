@@ -1,0 +1,19 @@
+{
+  "schema": "change-record.v1",
+  "change": {
+    "id": "CHG-MCP-BOUNDARY",
+    "version": "v0.8.3",
+    "title": "Register local stdio MCP and HTTPS boundary issue",
+    "summary": "Registers local stdio MCP Acceptance behavior and the HTTPS boundary as an open product issue; no remote or live MCP claim is made.",
+    "status": "active",
+    "owner": "gateway",
+    "changed_paths": ["quality/bugs/BUG-083-MCP-BOUNDARY.json", "quality/requirements.v1.json"],
+    "requirement_ids": ["REQ-083-MCP-BOUNDARY", "REQ-083-EVIDENCE"],
+    "bug_ids": ["BUG-083-MCP-BOUNDARY"],
+    "test_impact": {"kind": "add", "required_suite_ids": ["SUITE-QUALITY-METADATA", "SUITE-QUALITY-FOCUSED", "SUITE-QUALITY-INVENTORY", "SUITE-PRODUCT-MCP"], "required_gate_ids": ["GATE-QUALITY-META", "GATE-QUALITY-PR", "GATE-QUALITY-RELEASE", "GATE-MCP-BOUNDARY"], "risk_classes": ["P1", "security", "release-gate", "source-only"]},
+    "claim_state": "confirmed",
+    "evidence_boundary": {"allowed_layers": ["source-test"], "excluded_layers": ["final-dmg", "installed-final", "live", "signing", "public"], "basis": ["product issue registration", "local/remote boundary"]},
+    "does_not_claim_fix": true,
+    "retirement": null
+  }
+}

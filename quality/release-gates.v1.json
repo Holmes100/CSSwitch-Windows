@@ -1,0 +1,457 @@
+{
+  "schema": "release-gates.v1",
+  "version": "v0.8.3",
+  "gates": [
+    {
+      "id": "GATE-QUALITY-META",
+      "version": "v0.8.3",
+      "name": "quality metadata gate",
+      "profile": "metadata",
+      "status": "active",
+      "owner": "quality-kernel",
+      "reason": null,
+      "expiry": null,
+      "replacement_id": null,
+      "evidence_layer": "source-test",
+      "required_suite_ids": [
+        "SUITE-QUALITY-METADATA",
+        "SUITE-QUALITY-FOCUSED",
+        "SUITE-QUALITY-INVENTORY"
+      ],
+      "required_requirement_ids": [
+        "REQ-083-SCHEMA",
+        "REQ-083-REGISTRY",
+        "REQ-083-VALIDATOR",
+        "REQ-083-INVENTORY"
+      ],
+      "base_policy": "none",
+      "requires_clean": false,
+      "requires_non_shallow": false,
+      "release_claim": "metadata-pass",
+      "candidate_policy": "required"
+    },
+    {
+      "id": "GATE-QUALITY-PR",
+      "version": "v0.8.3",
+      "name": "quality pull-request impact gate",
+      "profile": "impact-pr",
+      "status": "active",
+      "owner": "quality-kernel",
+      "reason": null,
+      "expiry": null,
+      "replacement_id": null,
+      "evidence_layer": "source-test",
+      "required_suite_ids": [
+        "SUITE-QUALITY-METADATA",
+        "SUITE-QUALITY-IMPACT",
+        "SUITE-QUALITY-INVENTORY"
+      ],
+      "required_requirement_ids": [
+        "REQ-083-LINEAGE",
+        "REQ-083-VALIDATOR",
+        "REQ-083-PATHS"
+      ],
+      "base_policy": "target-ref-merge-base",
+      "requires_clean": false,
+      "requires_non_shallow": false,
+      "release_claim": "impact-covered",
+      "candidate_policy": "excluded"
+    },
+    {
+      "id": "GATE-QUALITY-RELEASE",
+      "version": "v0.8.3",
+      "name": "quality release impact gate",
+      "profile": "impact-release",
+      "status": "active",
+      "owner": "quality-kernel",
+      "reason": "This is a source/unit impact gate only; it is not the multi-layer release-ready predicate.",
+      "expiry": null,
+      "replacement_id": null,
+      "evidence_layer": "source-test",
+      "required_suite_ids": [
+        "SUITE-QUALITY-METADATA",
+        "SUITE-QUALITY-IMPACT",
+        "SUITE-QUALITY-INVENTORY"
+      ],
+      "required_requirement_ids": [
+        "REQ-083-LINEAGE",
+        "REQ-083-VALIDATOR",
+        "REQ-083-PATHS",
+        "REQ-083-EVIDENCE"
+      ],
+      "base_policy": "previous-release-peeled",
+      "requires_clean": true,
+      "requires_non_shallow": true,
+      "release_claim": "impact-covered",
+      "candidate_policy": "required"
+    },
+    {
+      "id": "GATE-SOURCE",
+      "version": "v0.8.3",
+      "name": "trusted exact-HEAD source gate",
+      "profile": "source",
+      "status": "active",
+      "owner": "quality-kernel",
+      "reason": "Source/unit claim only; excludes artifact, installed runtime, live providers, signing, notarization, and release.",
+      "expiry": null,
+      "replacement_id": null,
+      "evidence_layer": "source-test",
+      "required_suite_ids": [
+        "SUITE-QUALITY-METADATA",
+        "SUITE-QUALITY-FOCUSED",
+        "SUITE-RUN-EVIDENCE-CONTRACT",
+        "SUITE-QUALITY-INVENTORY",
+        "SUITE-PY-OFFLINE",
+        "SUITE-RUST-GATEWAY",
+        "SUITE-PY-LOOPBACK",
+        "SUITE-SHELL-SCRIPTS",
+        "SUITE-RUST-DESKTOP",
+        "SUITE-RUST-CODEX-NETWORK",
+        "SUITE-RUST-SKILL-PACKAGE",
+        "SUITE-MJS-FRONTEND",
+        "SUITE-ORPHAN-SKILL-BRIDGE",
+        "SUITE-ORPHAN-SKILL-BOUNDARY",
+        "SUITE-SOURCE-GATE-CONTRACT"
+      ],
+      "required_requirement_ids": [
+        "REQ-083-SCHEMA",
+        "REQ-083-INVENTORY",
+        "REQ-083-EVIDENCE",
+        "REQ-083-SOURCE-GATE"
+      ],
+      "base_policy": "target-ref-merge-base",
+      "requires_clean": true,
+      "requires_non_shallow": true,
+      "release_claim": "source-green",
+      "candidate_policy": "required",
+      "retirement": null
+    },
+    {
+      "id": "GATE-S0-LEGACY",
+      "version": "v0.8.3",
+      "name": "legacy S0 gate",
+      "profile": "legacy",
+      "status": "retired",
+      "owner": "legacy-test-gate",
+      "reason": "Replaced by the trusted catalog-bound source gate.",
+      "expiry": null,
+      "replacement_id": "GATE-SOURCE",
+      "evidence_layer": "source-test",
+      "required_suite_ids": [
+        "SUITE-LEGACY-RUN-ALL",
+        "SUITE-PY-OFFLINE",
+        "SUITE-PY-LOOPBACK",
+        "SUITE-SHELL-SCRIPTS",
+        "SUITE-RUST-DESKTOP",
+        "SUITE-RUST-GATEWAY",
+        "SUITE-MJS-FRONTEND"
+      ],
+      "required_requirement_ids": [
+        "REQ-083-EVIDENCE",
+        "REQ-083-INVENTORY"
+      ],
+      "base_policy": "none",
+      "requires_clean": false,
+      "requires_non_shallow": false,
+      "release_claim": "legacy-known-unreliable",
+      "candidate_policy": "excluded",
+      "retirement": {
+        "retired_on": "2026-07-26",
+        "reason": "The legacy S0 aggregator could produce false green and is no longer gate authority.",
+        "replacement_id": "GATE-SOURCE"
+      }
+    },
+    {
+      "id": "GATE-SCIENCE-UPDATER",
+      "version": "v0.8.3",
+      "name": "Science check-only and updater product gate",
+      "profile": "product",
+      "status": "active",
+      "owner": "science-runtime",
+      "reason": "The standalone updater identity defect is source-reproduced and source-fixed against official 0.1.20/0.1.25 updater and DMG-seed executables. The product gate remains open until the fixed exact-HEAD artifact and installed/live runtime layers pass.",
+      "expiry": "2026-10-01",
+      "replacement_id": null,
+      "evidence_layer": "source-test",
+      "required_suite_ids": [
+        "SUITE-PRODUCT-SCIENCE-UPDATER"
+      ],
+      "required_requirement_ids": [
+        "REQ-083-SCIENCE-UPDATER",
+        "REQ-083-EVIDENCE"
+      ],
+      "base_policy": "none",
+      "requires_clean": false,
+      "requires_non_shallow": false,
+      "release_claim": "product-open-not-run",
+      "candidate_policy": "required"
+    },
+    {
+      "id": "GATE-DEEPSEEK-THINKING",
+      "version": "v0.8.3",
+      "name": "DeepSeek Pro thinking product gate",
+      "profile": "product",
+      "status": "active",
+      "owner": "gateway",
+      "reason": "Future provider-boundary gate; not executed by the quality kernel node.",
+      "expiry": "2026-10-01",
+      "replacement_id": null,
+      "evidence_layer": "source-test",
+      "required_suite_ids": [
+        "SUITE-PRODUCT-DEEPSEEK"
+      ],
+      "required_requirement_ids": [
+        "REQ-083-DEEPSEEK-THINKING",
+        "REQ-083-EVIDENCE"
+      ],
+      "base_policy": "none",
+      "requires_clean": false,
+      "requires_non_shallow": false,
+      "release_claim": "product-open-not-run",
+      "candidate_policy": "required"
+    },
+    {
+      "id": "GATE-DATABASE-ERROR",
+      "version": "v0.8.3",
+      "name": "Database access error product gate",
+      "profile": "product",
+      "status": "active",
+      "owner": "runtime-state",
+      "reason": "Future temporary-database fixture gate; real user databases are out of scope.",
+      "expiry": "2026-10-01",
+      "replacement_id": null,
+      "evidence_layer": "source-test",
+      "required_suite_ids": [
+        "SUITE-PRODUCT-DATABASE"
+      ],
+      "required_requirement_ids": [
+        "REQ-083-DATABASE-ERROR",
+        "REQ-083-EVIDENCE"
+      ],
+      "base_policy": "none",
+      "requires_clean": false,
+      "requires_non_shallow": false,
+      "release_claim": "product-open-not-run",
+      "candidate_policy": "required"
+    },
+    {
+      "id": "GATE-GITHUB-BUNDLE",
+      "version": "v0.8.3",
+      "name": "GitHub Skill bundle product gate",
+      "profile": "product",
+      "status": "active",
+      "owner": "skill-package",
+      "reason": "Future temporary archive fixture gate; public GitHub and installed Skill are not exercised here.",
+      "expiry": "2026-10-01",
+      "replacement_id": null,
+      "evidence_layer": "source-test",
+      "required_suite_ids": [
+        "SUITE-PRODUCT-GITHUB-BUNDLE"
+      ],
+      "required_requirement_ids": [
+        "REQ-083-GITHUB-BUNDLE",
+        "REQ-083-EVIDENCE"
+      ],
+      "base_policy": "none",
+      "requires_clean": false,
+      "requires_non_shallow": false,
+      "release_claim": "product-open-not-run",
+      "candidate_policy": "required"
+    },
+    {
+      "id": "GATE-MCP-BOUNDARY",
+      "version": "v0.8.3",
+      "name": "Local stdio MCP and HTTPS boundary product gate",
+      "profile": "product",
+      "status": "active",
+      "owner": "gateway",
+      "reason": "Future local/remote boundary gate; not executed by the quality kernel node.",
+      "expiry": "2026-10-01",
+      "replacement_id": null,
+      "evidence_layer": "source-test",
+      "required_suite_ids": [
+        "SUITE-PRODUCT-MCP"
+      ],
+      "required_requirement_ids": [
+        "REQ-083-MCP-BOUNDARY",
+        "REQ-083-EVIDENCE"
+      ],
+      "base_policy": "none",
+      "requires_clean": false,
+      "requires_non_shallow": false,
+      "release_claim": "product-open-not-run",
+      "candidate_policy": "required"
+    },
+    {
+      "id": "GATE-OPENCODE-65",
+      "version": "v0.8.3",
+      "name": "OpenCode Go issue 65 product gate",
+      "profile": "product",
+      "status": "active",
+      "owner": "gateway",
+      "reason": "Future exact-selector/provider gate; not executed by the quality kernel node.",
+      "expiry": "2026-10-01",
+      "replacement_id": null,
+      "evidence_layer": "source-test",
+      "required_suite_ids": [
+        "SUITE-PRODUCT-OPENCODE-65"
+      ],
+      "required_requirement_ids": [
+        "REQ-083-OPENCODE-65",
+        "REQ-083-EVIDENCE"
+      ],
+      "base_policy": "none",
+      "requires_clean": false,
+      "requires_non_shallow": false,
+      "release_claim": "product-open-not-run",
+      "candidate_policy": "required"
+    },
+    {
+      "id": "GATE-SCIENCE-MACHO",
+      "version": "v0.8.3",
+      "name": "Science Mach-O metadata product gate",
+      "profile": "product",
+      "status": "active",
+      "owner": "science-runtime",
+      "reason": "The exact metadata parser and isolated App-seeded updater snapshot/version oracle are source-reproduced and source-fixed. Final artifact, installed runtime, signing, public, and live evidence remain pending.",
+      "expiry": "2026-10-01",
+      "replacement_id": null,
+      "evidence_layer": "source-test",
+      "required_suite_ids": [
+        "SUITE-PRODUCT-MACHO"
+      ],
+      "required_requirement_ids": [
+        "REQ-083-MACHO-METADATA",
+        "REQ-083-EVIDENCE"
+      ],
+      "base_policy": "none",
+      "requires_clean": false,
+      "requires_non_shallow": false,
+      "release_claim": "product-open-not-run",
+      "candidate_policy": "required"
+    },
+    {
+      "id": "GATE-SSH-LATE",
+      "version": "v0.8.3",
+      "name": "SSH late-failure transaction product gate",
+      "profile": "product",
+      "status": "active",
+      "owner": "science-runtime",
+      "reason": "Source prevalidation, serialized authority rechecks, exact compensation, durable cleanup, mutation, and fresh dual-review evidence passed with fake/local fixtures; production artifact/runtime and real SSH/provider evidence remain pending.",
+      "expiry": "2026-10-01",
+      "replacement_id": null,
+      "evidence_layer": "source-test",
+      "required_suite_ids": [
+        "SUITE-PRODUCT-SSH-LATE"
+      ],
+      "required_requirement_ids": [
+        "REQ-083-SSH-LATE",
+        "REQ-083-EVIDENCE"
+      ],
+      "base_policy": "none",
+      "requires_clean": false,
+      "requires_non_shallow": false,
+      "release_claim": "product-open-not-run",
+      "candidate_policy": "required"
+    },
+    {
+      "id": "GATE-TOOL-ARG-EXCLUSIVITY",
+      "version": "v0.8.3",
+      "name": "Tool argument exclusivity product gate",
+      "profile": "product",
+      "status": "active",
+      "owner": "gateway",
+      "reason": "Requires source red-green-mutation plus later isolated production-artifact tool execution; no live provider is authorized.",
+      "expiry": "2026-10-01",
+      "replacement_id": null,
+      "evidence_layer": "source-test",
+      "required_suite_ids": [
+        "SUITE-RUST-GATEWAY",
+        "SUITE-PY-LOOPBACK"
+      ],
+      "required_requirement_ids": [
+        "REQ-083-TOOL-ARG-EXCLUSIVITY",
+        "REQ-083-EVIDENCE"
+      ],
+      "base_policy": "none",
+      "requires_clean": false,
+      "requires_non_shallow": false,
+      "release_claim": "product-open-not-run",
+      "candidate_policy": "required"
+    },
+    {
+      "id": "GATE-SCIENCE-REATTACH",
+      "version": "v0.8.3",
+      "name": "Science identity-safe reattachment product gate",
+      "profile": "product",
+      "status": "active",
+      "owner": "science-runtime",
+      "reason": "Source identity, stop-success, no-clobber, mutation, and dual-review evidence passed; isolated production-artifact restart/reattach evidence remains pending.",
+      "expiry": "2026-10-01",
+      "replacement_id": null,
+      "evidence_layer": "source-test",
+      "required_suite_ids": [
+        "SUITE-RUST-DESKTOP",
+        "SUITE-SHELL-SCRIPTS"
+      ],
+      "required_requirement_ids": [
+        "REQ-083-SCIENCE-REATTACH",
+        "REQ-083-EVIDENCE"
+      ],
+      "base_policy": "none",
+      "requires_clean": false,
+      "requires_non_shallow": false,
+      "release_claim": "product-open-not-run",
+      "candidate_policy": "required"
+    },
+    {
+      "id": "GATE-GATEWAY-RECOVERY",
+      "version": "v0.8.3",
+      "name": "Bounded Gateway recovery product gate",
+      "profile": "product",
+      "status": "active",
+      "owner": "runtime-state",
+      "reason": "Requires source owned-child failure injection and later isolated production-artifact recovery evidence.",
+      "expiry": "2026-10-01",
+      "replacement_id": null,
+      "evidence_layer": "source-test",
+      "required_suite_ids": [
+        "SUITE-RUST-DESKTOP",
+        "SUITE-PY-LOOPBACK"
+      ],
+      "required_requirement_ids": [
+        "REQ-083-GATEWAY-RECOVERY",
+        "REQ-083-EVIDENCE"
+      ],
+      "base_policy": "none",
+      "requires_clean": false,
+      "requires_non_shallow": false,
+      "release_claim": "product-open-not-run",
+      "candidate_policy": "required"
+    },
+    {
+      "id": "GATE-RESPONSES-CORE",
+      "version": "v0.8.3",
+      "name": "OpenAI Responses bounded core product gate",
+      "profile": "product",
+      "status": "active",
+      "owner": "gateway",
+      "reason": "Only text, two-turn, and function tools are blocking; provider compatibility and generic protocol conformance remain separate rows.",
+      "expiry": "2026-10-01",
+      "replacement_id": null,
+      "evidence_layer": "source-test",
+      "required_suite_ids": [
+        "SUITE-RUST-GATEWAY",
+        "SUITE-PY-LOOPBACK"
+      ],
+      "required_requirement_ids": [
+        "REQ-083-RESPONSES-CORE",
+        "REQ-083-EVIDENCE"
+      ],
+      "base_policy": "none",
+      "requires_clean": false,
+      "requires_non_shallow": false,
+      "release_claim": "product-open-not-run",
+      "candidate_policy": "required"
+    }
+  ]
+}

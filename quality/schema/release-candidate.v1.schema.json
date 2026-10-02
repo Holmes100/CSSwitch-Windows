@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://csswitch.local/schema/release-candidate.v1.schema.json",
+  "title": "Release candidate v1",
+  "$defs": {
+    "Sha": {"type": "string", "pattern": "^[0-9a-f]{64}(?![\\s\\S])", "minLength": 64, "maxLength": 64},
+    "GitSha": {"type": "string", "pattern": "^[0-9a-f]{40}(?![\\s\\S])", "minLength": 40, "maxLength": 40},
+    "Path": {"type": "string", "pattern": "^(?!/)(?!.*[\\u0000-\\u001f\\u007f])(?!.*(?:^|/)(?:\\.|\\.\\.)(?:/|$))(?!.*(?:^|/)(?:/|$)).{1,240}$(?![\\s\\S])", "minLength": 1, "maxLength": 240},
+    "ArtifactRef": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {"path": {"$ref": "#/$defs/Path"}, "sha256": {"$ref": "#/$defs/Sha"}}}
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "version", "candidate_head_sha", "previous_release", "gate_ids", "completion_seal"],
+  "properties": {
+    "schema": {"const": "release-candidate.v1"},
+    "version": {"type": "string", "pattern": "^v[0-9]{1,4}\\.[0-9]{1,4}\\.[0-9]{1,4}$(?![\\s\\S])", "maxLength": 32},
+    "candidate_head_sha": {"$ref": "#/$defs/GitSha"},
+    "previous_release": {"type": "object", "additionalProperties": false, "required": ["tag", "tag_object_sha", "peeled_sha"], "properties": {"tag": {"type": "string", "pattern": "^v[0-9]{1,4}\\.[0-9]{1,4}\\.[0-9]{1,4}$(?![\\s\\S])", "maxLength": 32}, "tag_object_sha": {"$ref": "#/$defs/GitSha"}, "peeled_sha": {"$ref": "#/$defs/GitSha"}}},
+    "gate_ids": {"type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": {"type": "string", "pattern": "^GATE-[A-Z0-9][A-Z0-9-]{0,31}(?![\\s\\S])", "maxLength": 37}},
+    "completion_seal": {"allOf": [{"$ref": "#/$defs/ArtifactRef"}, {"properties": {"path": {"const": "completion-seal.json"}}}]}
+  }
+}

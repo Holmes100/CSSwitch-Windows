@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://csswitch.local/schema/run-manifest.v1.schema.json",
+  "title": "Run manifest v1",
+  "$defs": {
+    "RunId": {"type": "string", "pattern": "^[0-9a-f]{32}(?![\\s\\S])", "minLength": 32, "maxLength": 32},
+    "Sha": {"type": "string", "pattern": "^[0-9a-f]{64}(?![\\s\\S])", "minLength": 64, "maxLength": 64},
+    "GitSha": {"type": "string", "pattern": "^[0-9a-f]{40}(?![\\s\\S])", "minLength": 40, "maxLength": 40},
+    "Path": {"type": "string", "pattern": "^(?!/)(?!.*[\\u0000-\\u001f\\u007f])(?!.*(?:^|/)(?:\\.|\\.\\.)(?:/|$))(?!.*(?:^|/)(?:/|$)).{1,240}$(?![\\s\\S])", "minLength": 1, "maxLength": 240},
+    "ArtifactRef": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {"path": {"$ref": "#/$defs/Path"}, "sha256": {"$ref": "#/$defs/Sha"}}},
+    "Expected": {"type": "object", "additionalProperties": false, "required": ["suite_id", "entrypoint_id"], "properties": {"suite_id": {"type": "string", "pattern": "^SUITE-[A-Z0-9][A-Z0-9-]{0,31}(?![\\s\\S])", "maxLength": 38}, "entrypoint_id": {"type": "string", "pattern": "^ENTRY-[A-Z0-9][A-Z0-9-]{0,31}(?![\\s\\S])", "maxLength": 38}}},
+    "Digests": {"type": "object", "additionalProperties": false, "required": ["schema_bundle", "catalog", "gates", "runner", "fixtures", "build_recipes", "sanitized_environment", "tools"], "properties": {"schema_bundle": {"$ref": "#/$defs/Sha"}, "catalog": {"$ref": "#/$defs/Sha"}, "gates": {"$ref": "#/$defs/Sha"}, "runner": {"$ref": "#/$defs/Sha"}, "fixtures": {"$ref": "#/$defs/Sha"}, "build_recipes": {"$ref": "#/$defs/Sha"}, "sanitized_environment": {"$ref": "#/$defs/Sha"}, "tools": {"$ref": "#/$defs/Sha"}}}
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "run_id", "profile", "head_sha", "comparison_base", "source_snapshot_manifest", "change_set", "invocation_argv", "expected_suites", "input_digests", "platform", "started_at"],
+  "properties": {
+    "schema": {"const": "run-manifest.v1"},
+    "run_id": {"$ref": "#/$defs/RunId"},
+    "profile": {"enum": ["focused", "source", "host", "artifact", "acceptance", "release"]},
+    "head_sha": {"$ref": "#/$defs/GitSha"},
+    "comparison_base": {"type": "object", "additionalProperties": false, "required": ["policy", "sha"], "properties": {"policy": {"enum": ["merge-base-origin-main", "head", "previous-release-peeled"]}, "sha": {"$ref": "#/$defs/GitSha"}}},
+    "source_snapshot_manifest": {"allOf": [{"$ref": "#/$defs/ArtifactRef"}, {"properties": {"path": {"const": "snapshot/source-snapshot-manifest.json"}}}]},
+    "change_set": {"anyOf": [{"type": "null"}, {"allOf": [{"$ref": "#/$defs/ArtifactRef"}, {"properties": {"path": {"const": "inputs/change-set.json"}}}]}]},
+    "invocation_argv": {"type": "array", "minItems": 1, "maxItems": 64, "items": {"type": "string", "maxLength": 1024}},
+    "expected_suites": {"type": "array", "minItems": 1, "maxItems": 128, "items": {"$ref": "#/$defs/Expected"}},
+    "input_digests": {"$ref": "#/$defs/Digests"},
+    "platform": {"type": "object", "additionalProperties": false, "required": ["os", "arch", "toolchain"], "properties": {"os": {"type": "string", "minLength": 1, "maxLength": 64}, "arch": {"type": "string", "minLength": 1, "maxLength": 64}, "toolchain": {"type": "string", "minLength": 1, "maxLength": 240}}},
+    "started_at": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,9})?Z(?![\\s\\S])", "maxLength": 30}
+  }
+}

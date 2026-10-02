@@ -1,0 +1,93 @@
+{
+  "schema": "bug-record.v1",
+  "bug": {
+    "id": "BUG-083-SCIENCE-REATTACH",
+    "version": "v0.8.3",
+    "title": "Science runtime cannot be safely reattached from port ownership alone",
+    "summary": "Source repair now binds Science reattachment and stop success to executable, data-dir, listener PID/process-start, managed receipt, final port closure, and atomic no-clobber receipt cleanup. Isolated production-artifact/runtime evidence remains pending.",
+    "status": "active",
+    "owner": "science-runtime",
+    "severity": "P0",
+    "claim_state": "confirmed",
+    "reproduction_state": "source-reproduced",
+    "resolution_state": "source-fixed-product-pending",
+    "affected_paths": [
+      "desktop/src-tauri/src/runtime/sandbox_session.rs",
+      "desktop/src-tauri/src/runtime/science.rs",
+      "desktop/src-tauri/src/commands/runtime.rs",
+      "desktop/src-tauri/src/runtime/process_ownership.rs",
+      "test/test_process_ownership_policy.py",
+      "test/test_scripts.sh"
+    ],
+    "requirement_ids": [
+      "REQ-083-SCIENCE-REATTACH",
+      "REQ-083-EVIDENCE"
+    ],
+    "change_ids": [
+      "CHG-SCIENCE-REATTACH"
+    ],
+    "expected_suite_ids": [
+      "SUITE-RUST-DESKTOP",
+      "SUITE-SHELL-SCRIPTS"
+    ],
+    "expected_gate_ids": [
+      "GATE-SCIENCE-REATTACH",
+      "GATE-SOURCE"
+    ],
+    "evidence_boundary": {
+      "allowed_layers": [
+        "source-test"
+      ],
+      "excluded_layers": [
+        "isolated-test-app",
+        "final-dmg",
+        "installed-final",
+        "live",
+        "signing",
+        "public"
+      ],
+      "basis": [
+        "user-reported managed Science port identity refusal",
+        ".agents/rules/science-runtime.md",
+        "old-product red, product green, product-only mutation, and fresh dual final review"
+      ]
+    },
+    "reproduction": {
+      "state": "source-reproduced and repaired; production artifact/runtime evidence pending",
+      "steps": [
+        "Create an isolated managed runtime bound to executable fingerprint, data-dir device/inode, listener PID/process-start, and a private managed receipt.",
+        "Exercise exact restart reattach, invalid and growing receipts, process-start drift, false-to-true stop observations, missing data-dir with a live listener, and concurrent tombstone restoration.",
+        "Require every mismatch or live final port to fail closed without publishing confirmed-stopped or signaling an unbound listener.",
+        "Require atomic no-clobber restoration to preserve both a concurrently committed receipt and the old tombstone."
+      ],
+      "observed": "The exact old product returned false stop success and overwrote a concurrent receipt; the repaired source passed exact, adjacent, 382-test Desktop, product-only mutation, restore-green, and fresh dual review evidence.",
+      "not_claimed": [
+        "isolated-test-app",
+        "final-dmg",
+        "installed-final",
+        "live",
+        "signing",
+        "public"
+      ]
+    },
+    "confirmed_facts": [
+      {
+        "statement": "Port-only Science adoption and stop success are forbidden; current source requires managed identity plus final configured-port closure.",
+        "evidence_ref": ".agents/rules/science-runtime.md",
+        "verification_status": "confirmed"
+      },
+      {
+        "statement": "False-to-true final port observations and missing data-dir with a live listener now fail closed without clearing runtime state or the managed receipt.",
+        "evidence_ref": "desktop/src-tauri/src/commands/runtime.rs::commands::runtime::tests::isolated_one_click_reuse_status_smoke_with_fake_science",
+        "verification_status": "confirmed"
+      },
+      {
+        "statement": "Managed receipt tombstone restoration uses an atomic no-clobber destination commit and preserves both files on conflict.",
+        "evidence_ref": "desktop/src-tauri/src/runtime/science.rs::runtime::science::tests::managed_launch_tombstone_restore_is_atomic_no_clobber",
+        "verification_status": "confirmed"
+      }
+    ],
+    "hypotheses": [],
+    "retirement": null
+  }
+}
