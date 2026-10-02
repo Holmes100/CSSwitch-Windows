@@ -1107,13 +1107,88 @@ fn windows_installed_science_bin_candidates() -> Vec<PathBuf> {
         .collect()
 }
 
+/// Windows 最低官方版本：移植验证基线为 0.1.55。更早的 Windows 构建（真机
+/// 实测 0.1.54 会在 serve 沙箱初始化最早阶段静默退出，且 daemon 日志都来不及
+/// 建立）不放行——上层按"未安装"引导用户下载当前版官方应用覆盖安装。
+#[cfg(windows)]
+const MIN_WINDOWS_SCIENCE_VERSION: (u64, u64, u64) = (0, 1, 55);
+
+/// 从 `claude-science <major>.<minor>.<patch> ...` 版本行提取可比较三元组。
+#[cfg(windows)]
+fn parse_science_version_triple(version_line: &str) -> Option<(u64, u64, u64)> {
+    let token = version_line.split_whitespace().nth(1)?;
+    let mut parts = token.split('.');
+    let major = parts.next()?.parse().ok()?;
+    let minor = parts.next()?.parse().ok()?;
+    let patch = parts.next().unwrap_or("0").parse().ok()?;
+    if parts.next().is_some() {
+        return None;
+    }
+    Some((major, minor, patch))
+}
+
+/// 版本是否达到 Windows 移植验证基线。
+#[cfg(windows)]
+fn science_version_meets_windows_floor(version_line: &str) -> bool {
+    parse_science_version_triple(version_line)
+        .is_some_and(|triple| triple >= MIN_WINDOWS_SCIENCE_VERSION)
+}
+
+#[cfg(all(test, windows))]
+mod windows_version_floor_tests {
+    use super::{parse_science_version_triple, science_version_meets_windows_floor};
+
+    #[test]
+    fn version_floor_accepts_baseline_and_newer() {
+        assert!(science_version_meets_windows_floor(
+            "claude-science 0.1.55 (release, public)"
+        ));
+        assert!(science_version_meets_windows_floor(
+            "claude-science 0.1.56 (release, public)"
+        ));
+        assert!(science_version_meets_windows_floor(
+            "claude-science 0.2.0 (release, public)"
+        ));
+        assert!(science_version_meets_windows_floor(
+            "claude-science 1.0 (release, public)"
+        ));
+    }
+
+    #[test]
+    fn version_floor_rejects_older_and_garbage() {
+        assert!(!science_version_meets_windows_floor(
+            "claude-science 0.1.54 (release, public)"
+        ));
+        // 0.1.5 是 (0,1,5) < (0,1,55)：逐段数值比较，不是字符串比较。
+        assert!(!science_version_meets_windows_floor(
+            "claude-science 0.1.5 (release, public)"
+        ));
+        assert!(!science_version_meets_windows_floor("claude-science"));
+        assert!(!science_version_meets_windows_floor("garbage"));
+        assert!(!science_version_meets_windows_floor(""));
+    }
+
+    #[test]
+    fn version_triple_parses_baseline() {
+        assert_eq!(
+            parse_science_version_triple("claude-science 0.1.55 (release, public)"),
+            Some((0, 1, 55))
+        );
+        assert_eq!(parse_science_version_triple("x 0.1.55.1"), None);
+    }
+}
+
 /// Windows 已安装 Science CLI：按候选顺序取第一个通过既有 `--version` 探测
 /// 校验的候选；全部失败 → None（上层沿用原有"未安装"错误与下载页 URL）。
 #[cfg(windows)]
 fn windows_installed_science_bin(version_cache: &ScienceVersionCache) -> Option<PathBuf> {
     windows_installed_science_bin_candidates()
         .into_iter()
-        .find(|candidate| version_cache.version(candidate).is_some())
+        .find(|candidate| {
+            version_cache
+                .version(candidate)
+                .is_some_and(|line| science_version_meets_windows_floor(&line))
+        })
 }
 
 /// 已安装 App 内置 Science CLI 路径：macOS 为固定 `.app` 内路径；Windows 为
