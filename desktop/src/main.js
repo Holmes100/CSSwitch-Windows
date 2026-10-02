@@ -1744,8 +1744,8 @@ async function stopAll() {
   setBusy(true);
   setMsg("停止中…");
   try {
-    await call("stop_all");
-    setMsg("已停止代理与沙箱。", "ok");
+    const summary = await call("stop_all");
+    setMsg("已停止代理与沙箱。" + (summary ? summary : ""), "ok");
     await refreshStatus();
   } catch (e) {
     setMsg("停止失败：" + e, "err");
@@ -1860,7 +1860,7 @@ function wire() {
     "runtimeChoiceSec", "runtimeChoiceText", "runtimeUseCacheBtn", "runtimeDownloadBtn", "runtimeChoiceCancelBtn",
     "historyRecoverySec", "historyRecoveryText", "historyRecoveryChoices", "historyRecoveryCancelBtn",
     "msg", "browserFallback", "browserFallbackUrl", "browserFallbackCopyBtn", "browserFallbackRetryBtn", "brandDot", "openBrowserBtn", "doctorBtn", "updateBtn", "verLabel",
-    "reportBtn", "logsBtn", "quitBtn", "modeSeg", "proxyPort", "sandboxPort", "reuseSystemSsh", "advSec",
+    "reportBtn", "logsBtn", "exportDiagBtn", "quitBtn", "modeSeg", "proxyPort", "sandboxPort", "reuseSystemSsh", "advSec",
     "connectionOverview", "listSec", "profileList", "newBtn",
     "wizSec", "wizTemplate", "wizTemplateChips", "wizTplLabel", "wizTplHint", "wizName", "wizBaseGroup", "wizBase", "wizBaseHint",
     "wizModelGroup", "wizModelLabel", "wizFetchBtn", "wizModelInfo", "wizModel", "wizModelHint", "wizCatalogMeta", "wizStaticCatalog", "wizRoleQuality", "wizRoleFast", "wizRoleFable", "wizCatalogWarning", "wizKeyGroup", "wizKey", "wizSaveBtn", "wizCancelBtn",
@@ -1972,6 +1972,18 @@ function wire() {
   els.logsBtn.addEventListener("click", () =>
     call("open_logs").catch((e) => setMsg("打开日志失败：" + e, "err"))
   );
+  els.exportDiagBtn.addEventListener("click", async () => {
+    els.exportDiagBtn.disabled = true;
+    setMsg("正在打包诊断日志（自动脱敏 API Key）…");
+    try {
+      const path = await call("export_diagnostics");
+      setMsg("诊断包已导出（已自动脱敏，可直接发给支持渠道）：" + path);
+    } catch (e) {
+      setMsg("导出诊断包失败：" + e, "err");
+    } finally {
+      els.exportDiagBtn.disabled = false;
+    }
+  });
   els.quitBtn.addEventListener("click", () => {
     setBusy(true);
     setMsg("正在停止代理与隔离 Science…");

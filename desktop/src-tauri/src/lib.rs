@@ -405,6 +405,7 @@ pub fn run() {
             commands::diagnostics::open_release_page,
             commands::diagnostics::report_bug,
             commands::diagnostics::open_logs,
+            commands::diagnostics::export_diagnostics,
             commands::runtime::quit_app
         ])
         .setup(|app| {

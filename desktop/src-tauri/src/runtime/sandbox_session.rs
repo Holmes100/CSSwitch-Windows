@@ -5543,6 +5543,74 @@ fn windows_sweep_sandbox_leftovers() {
     std::thread::sleep(std::time::Duration::from_millis(1_500));
 }
 
+/// 「全部停止」的深度清扫：先杀残留容器与孤儿 Science，再删除回滚快照目录。
+/// 保守策略：存在 pending-authority-cleanup 清单时跳过快照删除（留给状态机
+/// 处理），只报告未清理。返回给 UI 的人读摘要。
+#[cfg(windows)]
+pub(crate) fn deep_clean_sandbox_leftovers() -> String {
+    windows_sweep_sandbox_leftovers();
+    let mut removed = 0usize;
+    let mut failed = Vec::new();
+    let mut kept_manifest = false;
+    let sandbox_root = match crate::runtime::science::sandbox_home().parent() {
+        Some(parent) => parent.to_path_buf(),
+        None => return "清扫：无法定位沙箱根目录".into(),
+    };
+    // 读失败按"状态未知"处理：跳过快照删除（保守），只清进程残留。
+    if config::read_pending_authority_cleanup_manifest(&config::default_dir())
+        .map_or(true, |manifest| manifest.is_some())
+    {
+        kept_manifest = true;
+    }
+    if !kept_manifest {
+        if let Ok(entries) = std::fs::read_dir(&sandbox_root) {
+            for entry in entries.flatten() {
+                let file_name = entry.file_name();
+                let Some(name) = file_name.to_str() else {
+                    continue;
+                };
+                if !pending_cleanup_name_is_valid(name) {
+                    continue;
+                }
+                let path = crate::platform::extend_max_path(&entry.path());
+                let mut last_error = None;
+                for _ in 0..3 {
+                    match std::fs::remove_dir_all(&path) {
+                        Ok(()) => {
+                            removed += 1;
+                            last_error = None;
+                            break;
+                        }
+                        Err(error) => {
+                            last_error = Some(error);
+                            std::thread::sleep(std::time::Duration::from_millis(2_000));
+                        }
+                    }
+                }
+                if let Some(error) = last_error {
+                    failed.push(format!("{name}（{error}）"));
+                }
+            }
+        }
+    }
+    let mut summary = String::from("容器与孤儿进程已清");
+    if removed > 0 {
+        summary.push_str(&format!("、快照×{removed}"));
+    }
+    if kept_manifest {
+        summary.push_str("、存在待恢复事务清单，快照保留");
+    }
+    if !failed.is_empty() {
+        summary.push_str(&format!("、删除失败：{}", failed.join("、")));
+    }
+    format!("清扫：{summary}")
+}
+
+#[cfg(not(windows))]
+pub(crate) fn deep_clean_sandbox_leftovers() -> String {
+    String::new()
+}
+
 fn windows_exit_code_70_command() -> Command {
     let mut command = Command::new("cmd");
     command.args(["/d", "/s", "/c", "exit", "70"]);

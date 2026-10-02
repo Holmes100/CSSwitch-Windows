@@ -364,7 +364,7 @@ pub(crate) async fn stop_all(
     app: tauri::AppHandle,
     state: State<'_, SharedAppState>,
     lifecycle: State<'_, SharedLifecycle>,
-) -> Result<(), String> {
+) -> Result<String, String> {
     let state = state.inner().clone();
     let lifecycle = lifecycle.inner().clone();
     run_blocking(move || stop_all_inner_cmd(app, state, lifecycle)).await
@@ -374,13 +374,19 @@ fn stop_all_inner_cmd(
     app: tauri::AppHandle,
     state: SharedAppState,
     lifecycle: SharedLifecycle,
-) -> Result<(), String> {
+) -> Result<String, String> {
     lifecycle.with_serialized(|| {
         lifecycle.bump_generation(); // 作废任何在途启动（防被停后又拿旧 key 复活）
         let mut st = lock(&state);
         let sandbox_res = stop_sandbox_state(&app, &mut st);
         st.stop_proxy();
-        sandbox_res.map_err(|e| format!("代理已停；但{e}真实实例 8765 未受影响。"))
+        let summary = match &sandbox_res {
+            Ok(()) => crate::runtime::sandbox_session::deep_clean_sandbox_leftovers(),
+            Err(_) => String::new(),
+        };
+        sandbox_res
+            .map(|()| summary)
+            .map_err(|e| format!("代理已停；但{e}真实实例 8765 未受影响。"))
     })
 }
 

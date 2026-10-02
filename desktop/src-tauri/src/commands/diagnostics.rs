@@ -217,6 +217,159 @@ pub(crate) fn open_logs() -> Result<(), String> {
     crate::platform::open_path(&dir).map_err(|e| format!("打开日志目录失败：{e}"))
 }
 
+/// 一键导出诊断包：收集应用日志、Science daemon 日志、脱敏后的 config 与版本
+/// 信息，打成一个 zip 写到 ~/.csswitch/diagnostics/ 并在资源管理器中定位。
+/// 目标：用户报问题时一键附包，不必到处找日志。密钥在导出前强制脱敏。
+#[tauri::command]
+pub(crate) fn export_diagnostics() -> Result<String, String> {
+    let entries = collect_diagnostics_entries()?;
+    let out_dir = config::default_dir().join("diagnostics");
+    std::fs::create_dir_all(&out_dir).map_err(|e| format!("创建诊断目录失败：{e}"))?;
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    let out = out_dir.join(format!("csswitch-diagnostics-{stamp}.zip"));
+    write_diagnostics_zip(&out, &entries).map_err(|e| format!("写诊断包失败：{e}"))?;
+    let _ = crate::platform::reveal_in_file_manager(&out);
+    Ok(out.to_string_lossy().into_owned())
+}
+
+/// 单文件大小上限：诊断包不是全量备份，超限日志跳过（避免 zip 巨大）。
+const DIAGNOSTICS_MAX_FILE_BYTES: u64 = 8 * 1024 * 1024;
+
+fn push_log_dir(entries: &mut Vec<(String, Vec<u8>)>, zip_prefix: &str, dir: &std::path::Path) {
+    let Ok(read) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for entry in read.flatten() {
+        let path = entry.path();
+        let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+            continue;
+        };
+        if !name.ends_with(".log") {
+            continue;
+        }
+        if let Ok(meta) = entry.metadata() {
+            if meta.len() > DIAGNOSTICS_MAX_FILE_BYTES {
+                continue;
+            }
+        }
+        if let Ok(bytes) = std::fs::read(&path) {
+            entries.push((format!("{zip_prefix}/{name}"), bytes));
+        }
+    }
+}
+
+/// config.json 脱敏：字段名含 key/token/secret/credential/password 的值整体
+/// 替换为占位符（递归，含 profile/credential 嵌套）；其余结构原样保留。
+fn redact_config_json(value: &mut serde_json::Value) {
+    const SENSITIVE: &[&str] = &["key", "token", "secret", "credential", "password"];
+    match value {
+        serde_json::Value::Object(map) => {
+            for (name, item) in map.iter_mut() {
+                let lower = name.to_ascii_lowercase();
+                if SENSITIVE.iter().any(|word| lower.contains(word)) {
+                    *item = serde_json::Value::String("[已脱敏]".into());
+                } else {
+                    redact_config_json(item);
+                }
+            }
+        }
+        serde_json::Value::Array(items) => items.iter_mut().for_each(redact_config_json),
+        _ => {}
+    }
+}
+
+fn collect_diagnostics_entries() -> Result<Vec<(String, Vec<u8>)>, String> {
+    let mut entries: Vec<(String, Vec<u8>)> = Vec::new();
+
+    push_log_dir(
+        &mut entries,
+        "logs",
+        &config::default_dir().join("logs"),
+    );
+    push_log_dir(
+        &mut entries,
+        "science-logs",
+        &crate::runtime::science::sandbox_data_dir().join("logs"),
+    );
+
+    let config_path = config::default_dir().join("config.json");
+    if config_path.is_file() {
+        let raw = std::fs::read(&config_path).map_err(|e| format!("读取 config 失败：{e}"))?;
+        let mut value: serde_json::Value = serde_json::from_slice(&raw)
+            .map_err(|e| format!("config 解析失败（原文件未改动）：{e}"))?;
+        redact_config_json(&mut value);
+        let pretty = serde_json::to_vec_pretty(&value)
+            .map_err(|e| format!("脱敏 config 序列化失败：{e}"))?;
+        entries.push(("config.redacted.json".into(), pretty));
+    }
+
+    entries.push(("info.txt".into(), build_diagnostics_info().into_bytes()));
+    Ok(entries)
+}
+
+fn build_diagnostics_info() -> String {
+    let mut info = String::new();
+    info.push_str("CSSwitch 诊断包\n");
+    info.push_str(&format!(
+        "生成时间: {} (epoch 秒)\n",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs()
+    ));
+    info.push_str(&format!("App 版本: {}\n", app_version()));
+    info.push_str(&format!("平台: {}\n", std::env::consts::OS));
+
+    let mut command = std::process::Command::new("cmd");
+    command.args(["/c", "ver"]);
+    crate::platform::hide_console(&mut command);
+    if let Ok(output) = command.output() {
+        info.push_str(&format!(
+            "Windows: {}\n",
+            String::from_utf8_lossy(&output.stdout).trim()
+        ));
+    }
+
+    // Science 版本探测：cfg 分支与 run_doctor 的候选逻辑保持一致（仅 Windows）。
+    #[cfg(windows)]
+    if let Some(science_bin) = windows_installed_science_bin() {
+        let mut command = std::process::Command::new(&science_bin);
+        command.arg("--version");
+        crate::platform::hide_console(&mut command);
+        match command.output() {
+            Ok(output) => info.push_str(&format!(
+                "Claude Science: {}\n",
+                String::from_utf8_lossy(&output.stdout).trim()
+            )),
+            Err(error) => info.push_str(&format!("Claude Science: 探测失败（{error}）\n")),
+        }
+    }
+
+    info.push_str(
+        "说明: config.redacted.json 已脱敏；key/token/secret/credential/password 字段值替换为占位符。\n",
+    );
+    info
+}
+
+fn write_diagnostics_zip(
+    out: &std::path::Path,
+    entries: &[(String, Vec<u8>)],
+) -> std::io::Result<()> {
+    let file = std::fs::File::create(out)?;
+    let mut zip = zip::ZipWriter::new(file);
+    let options =
+        zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    for (name, bytes) in entries {
+        zip.start_file(name.as_str(), options)?;
+        std::io::Write::write_all(&mut zip, bytes)?;
+    }
+    zip.finish()?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::doctor_config_from;
@@ -229,6 +382,46 @@ mod tests {
             .unwrap()
             .as_nanos();
         std::env::temp_dir().join(format!("csswitch-doctor-{name}-{nanos}"))
+    }
+
+    #[test]
+    fn diagnostics_redaction_strips_sensitive_fields_recursively() {
+        let mut value = serde_json::from_str(
+            r#"{"profiles":[{"name":"p","key":"sk-SECRET","credential":{"token":"tok"}}],"note":"ok","money":42}"#,
+        )
+        .unwrap();
+        super::redact_config_json(&mut value);
+        let text = serde_json::to_string(&value).unwrap();
+        assert!(!text.contains("sk-SECRET"), "key 值必须被脱敏：{text}");
+        assert!(!text.contains("\"tok\""), "token 值必须被脱敏：{text}");
+        assert!(text.contains("\"name\":\"p\""), "非敏感字段保留：{text}");
+        assert!(text.contains("[已脱敏]"));
+    }
+
+    #[test]
+    fn diagnostics_collection_pulls_only_log_files() {
+        let root = tmpdir("collect");
+        let logs = root.join("logs");
+        fs::create_dir_all(&logs).unwrap();
+        fs::write(logs.join("operation.log"), b"app-log").unwrap();
+        fs::write(logs.join("note.txt"), b"not-a-log").unwrap();
+        let mut entries = Vec::new();
+        super::push_log_dir(&mut entries, "logs", &logs);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].0, "logs/operation.log");
+        assert_eq!(entries[0].1, b"app-log");
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn diagnostics_zip_writes_magic_header() {
+        let dir = tmpdir("zip");
+        fs::create_dir_all(&dir).unwrap();
+        let out = dir.join("d.zip");
+        super::write_diagnostics_zip(&out, &[("a.txt".into(), b"hello".to_vec())]).unwrap();
+        let bytes = fs::read(&out).unwrap();
+        assert!(bytes.starts_with(b"PK"), "zip 魔数缺失");
+        fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]

@@ -41,6 +41,8 @@ hkdf = "0.12"
 sha2 = "0.10"
 base64 = "0.22"
 libc = "0.2"
+# 诊断包导出（版本与 skill-package 对齐，共享编译产物）。
+zip = { version = "2.4.2", default-features = false, features = ["deflate"] }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = '0.61', features = ['Win32_Foundation', 'Win32_System_IO', 'Win32_Storage_FileSystem', 'Win32_System_Threading', 'Win32_UI_Shell', 'Win32_Security_Cryptography'] }
