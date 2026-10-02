@@ -1860,7 +1860,7 @@ function wire() {
     "runtimeChoiceSec", "runtimeChoiceText", "runtimeUseCacheBtn", "runtimeDownloadBtn", "runtimeChoiceCancelBtn",
     "historyRecoverySec", "historyRecoveryText", "historyRecoveryChoices", "historyRecoveryCancelBtn",
     "msg", "browserFallback", "browserFallbackUrl", "browserFallbackCopyBtn", "browserFallbackRetryBtn", "brandDot", "openBrowserBtn", "doctorBtn", "updateBtn", "verLabel",
-    "reportBtn", "logsBtn", "exportDiagBtn", "quitBtn", "modeSeg", "proxyPort", "sandboxPort", "reuseSystemSsh", "advSec",
+    "reportBtn", "logsBtn", "exportDiagBtn", "repairTxnBtn", "quitBtn", "modeSeg", "proxyPort", "sandboxPort", "reuseSystemSsh", "advSec",
     "connectionOverview", "listSec", "profileList", "newBtn",
     "wizSec", "wizTemplate", "wizTemplateChips", "wizTplLabel", "wizTplHint", "wizName", "wizBaseGroup", "wizBase", "wizBaseHint",
     "wizModelGroup", "wizModelLabel", "wizFetchBtn", "wizModelInfo", "wizModel", "wizModelHint", "wizCatalogMeta", "wizStaticCatalog", "wizRoleQuality", "wizRoleFast", "wizRoleFable", "wizCatalogWarning", "wizKeyGroup", "wizKey", "wizSaveBtn", "wizCancelBtn",
@@ -1982,6 +1982,18 @@ function wire() {
       setMsg("导出诊断包失败：" + e, "err");
     } finally {
       els.exportDiagBtn.disabled = false;
+    }
+  });
+  els.repairTxnBtn.addEventListener("click", async () => {
+    els.repairTxnBtn.disabled = true;
+    setMsg("正在修复中断的启动事务…");
+    try {
+      const summary = await call("repair_interrupted_transaction");
+      setMsg(summary, "ok");
+    } catch (e) {
+      setMsg("修复失败：" + e + "（也可导出诊断包发支持渠道）", "err");
+    } finally {
+      els.repairTxnBtn.disabled = false;
     }
   });
   els.quitBtn.addEventListener("click", () => {

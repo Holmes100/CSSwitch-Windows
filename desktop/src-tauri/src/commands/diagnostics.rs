@@ -370,6 +370,74 @@ fn write_diagnostics_zip(
     Ok(())
 }
 
+/// 修复中断的启动事务（一键开始报 manual_recovery_required 时的自助恢复路径）。
+/// 与真机验证过的手工流程一致：
+/// 1. config.json 的 runtime_transaction 置 null——serde_json::Value 往返对
+///    u64 无损（事务里的 inode 大整数远超 JS 的 2^53，文本/JS 解析必坏），
+///    写回前留滚动备份；
+/// 2. pending-authority-cleanup 清单 disposition 翻转为 cleanup_only——纯字节
+///    替换、其余字节不动，下次一键开始由状态机自己安全消化快照；
+/// 3. 不直接删快照。修复后需完全退出并重开 CSSwitch（内存态仍持有旧事务）。
+fn repair_interrupted_transaction_in(dir: &std::path::Path) -> Result<Vec<String>, String> {
+    let mut steps = Vec::new();
+
+    let config_path = dir.join("config.json");
+    if config_path.is_file() {
+        let raw = std::fs::read(&config_path).map_err(|e| format!("读取 config.json 失败：{e}"))?;
+        let mut value: serde_json::Value =
+            serde_json::from_slice(&raw).map_err(|e| format!("config.json 解析失败：{e}"))?;
+        if value.get("runtime_transaction").is_some_and(|v| !v.is_null()) {
+            value["runtime_transaction"] = serde_json::Value::Null;
+            let _ = config::write_rolling_backup(dir);
+            let serialized = serde_json::to_vec_pretty(&value)
+                .map_err(|e| format!("config.json 序列化失败：{e}"))?;
+            std::fs::write(&config_path, serialized)
+                .map_err(|e| format!("写回 config.json 失败：{e}"))?;
+            let handle = std::fs::OpenOptions::new()
+                .write(true)
+                .open(&config_path)
+                .map_err(|e| format!("收紧 config.json 权限失败：{e}"))?;
+            let _ = crate::platform::make_file_private(&handle);
+            steps.push("runtime_transaction 已置 null".into());
+        } else {
+            steps.push("runtime_transaction 无需修复".into());
+        }
+    }
+
+    let manifest_path = dir.join("pending-authority-cleanup.v1.json");
+    if manifest_path.is_file() {
+        let raw = std::fs::read(&manifest_path).map_err(|e| format!("读取清理清单失败：{e}"))?;
+        let text =
+            String::from_utf8(raw).map_err(|_| "清理清单编码异常，已拒绝处理".to_string())?;
+        if text.contains("\"disposition\":\"active_recovery\"") {
+            let flipped = text.replace(
+                "\"disposition\":\"active_recovery\"",
+                "\"disposition\":\"cleanup_only\"",
+            );
+            std::fs::write(&manifest_path, flipped.as_bytes())
+                .map_err(|e| format!("写回清理清单失败：{e}"))?;
+            steps.push("清理清单已翻转为 cleanup_only（下次一键开始由应用安全消化快照）".into());
+        } else {
+            steps.push("清理清单无需翻转".into());
+        }
+    }
+
+    Ok(steps)
+}
+
+/// 「诊断与支持」页的一键修复入口。
+#[tauri::command]
+pub(crate) fn repair_interrupted_transaction() -> Result<String, String> {
+    let steps = repair_interrupted_transaction_in(&config::default_dir())?;
+    if steps.is_empty() {
+        return Ok("未发现需要修复的内容。".into());
+    }
+    Ok(format!(
+        "修复完成：{}。请完全退出并重新打开 CSSwitch，再点「一键开始」。",
+        steps.join("；")
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::doctor_config_from;
@@ -421,6 +489,43 @@ mod tests {
         super::write_diagnostics_zip(&out, &[("a.txt".into(), b"hello".to_vec())]).unwrap();
         let bytes = fs::read(&out).unwrap();
         assert!(bytes.starts_with(b"PK"), "zip 魔数缺失");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn repair_interrupted_transaction_nulls_field_and_flips_manifest() {
+        let dir = tmpdir("repair");
+        fs::create_dir_all(&dir).unwrap();
+        // 大整数全部 > 2^53（JS 解析必丢精度的区间）、< u64::MAX（serde_json 无损区间）。
+        fs::write(
+            dir.join("config.json"),
+            br#"{"schema_version":4,"profiles":[],"active_id":"","proxy_port":18991,"sandbox_port":8990,"runtime_transaction":{"dev":12345678901234567890,"inode":9876543210987654321},"keeper":17909179561234567890}"#,
+        )
+        .unwrap();
+        fs::write(
+            dir.join("pending-authority-cleanup.v1.json"),
+            br#"{"schema_version":2,"disposition":"active_recovery","entries":[{"inode":11122233344455566677}]}"#,
+        )
+        .unwrap();
+
+        let steps = super::repair_interrupted_transaction_in(&dir).unwrap();
+        assert_eq!(steps.len(), 2, "{steps:?}");
+
+        let fixed: serde_json::Value =
+            serde_json::from_slice(&fs::read(dir.join("config.json")).unwrap()).unwrap();
+        assert!(fixed.get("runtime_transaction").unwrap().is_null());
+        assert_eq!(
+            fixed["keeper"],
+            serde_json::from_str::<serde_json::Value>("17909179561234567890").unwrap(),
+            "无关字段的大整数必须无损保留"
+        );
+        let manifest_raw = fs::read_to_string(dir.join("pending-authority-cleanup.v1.json")).unwrap();
+        assert!(manifest_raw.contains("\"disposition\":\"cleanup_only\""), "{manifest_raw}");
+        assert!(manifest_raw.contains("11122233344455566677"), "清单大整数必须逐字节保留");
+
+        // 幂等：再跑一遍全部变为"无需修复"。
+        let again = super::repair_interrupted_transaction_in(&dir).unwrap();
+        assert!(again.iter().all(|s| s.contains("无需")), "{again:?}");
         fs::remove_dir_all(&dir).unwrap();
     }
 
