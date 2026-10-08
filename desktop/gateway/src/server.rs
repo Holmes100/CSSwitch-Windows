@@ -1218,7 +1218,27 @@ fn start_skill_install_bridge(cfg: &GatewayConfig) -> Result<(), String> {
 #[cfg(windows)]
     {
         // Windows：无 POSIX mode/uid；目录 ACL 由用户 profile 默认 ACL 保护。
+        // 但沙箱以 AppContainer 受限令牌运行——仅用户 ACE 不满足其写访问校验，
+        // agent 将无法把安装请求写进桥目录（真机 shanbin 实测 EACCES）。授予
+        // ALL/RESTRICTED APPLICATION PACKAGES 可继承 Modify：桥本就是给沙箱
+        // 写请求用的运行时通道，与 mac 上 HOME 桥的威胁模型等价。
         let _ = bridge;
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        let grant = std::process::Command::new("icacls")
+            .arg(bridge)
+            .args(["/grant", "*S-1-15-2-1:(OI)(CI)M", "*S-1-15-2-2:(OI)(CI)M"])
+            .creation_flags(CREATE_NO_WINDOW)
+            .output();
+        if let Ok(output) = grant {
+            if !output.status.success() {
+                eprintln!(
+                    "skill-install bridge: icacls grant failed ({}): {}",
+                    output.status,
+                    String::from_utf8_lossy(&output.stderr)
+                );
+            }
+        }
     }
     let host_lock = acquire_bridge_host_lock(bridge)?;
     recover_orphaned_bridge_processing(bridge)?;
