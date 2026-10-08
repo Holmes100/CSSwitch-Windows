@@ -1134,6 +1134,27 @@ fn science_version_meets_windows_floor(version_line: &str) -> bool {
         .is_some_and(|triple| triple >= MIN_WINDOWS_SCIENCE_VERSION)
 }
 
+/// 「全部停止」的兜底：受管启动身份无法确认时（如应用重开后遗留的 daemon），
+/// 委托官方 CLI 按 data-dir 停止——daemon 自身校验数据目录锁，比按 PID 猜测
+/// 安全，也不触碰真实实例（CLI 只作用于显式 --data-dir）。
+#[cfg(windows)]
+pub(crate) fn cli_stop_sandbox_daemon() -> Result<(), String> {
+    let bin = windows_installed_science_bin(&ScienceVersionCache::default())
+        .ok_or("未找到官方 claude-science.exe，无法执行 CLI 停止")?;
+    let mut command = Command::new(&bin);
+    command.arg("stop").arg("--data-dir").arg(sandbox_data_dir());
+    crate::platform::hide_console(&mut command);
+    let output = command
+        .output()
+        .map_err(|e| format!("CLI 停止执行失败：{e}"))?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let code = output.status.code().unwrap_or(-1);
+        return Err(format!("CLI 停止返回非零（{code}）{stderr}"));
+    }
+    Ok(())
+}
+
 #[cfg(all(test, windows))]
 mod windows_version_floor_tests {
     use super::{parse_science_version_triple, science_version_meets_windows_floor};

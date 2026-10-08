@@ -378,8 +378,23 @@ fn stop_all_inner_cmd(
     lifecycle.with_serialized(|| {
         lifecycle.bump_generation(); // 作废任何在途启动（防被停后又拿旧 key 复活）
         let mut st = lock(&state);
-        let sandbox_res = stop_sandbox_state(&app, &mut st);
+        let mut sandbox_res = stop_sandbox_state(&app, &mut st);
         st.stop_proxy();
+        // 兜底：受管身份无法确认（应用重开后遗留的 daemon）时，委托官方 CLI
+        // 按 data-dir 停止——daemon 自身校验数据目录锁，安全且不触碰真实实例。
+        if let Err(e) = &sandbox_res {
+            if e.contains("managed launch 身份") {
+                match crate::runtime::science::cli_stop_sandbox_daemon() {
+                    Ok(()) => {
+                        sandbox_res = Ok(());
+                        st.science_runtime = None;
+                    }
+                    Err(cli_err) => {
+                        sandbox_res = Err(format!("{e}；官方 CLI 停止也失败：{cli_err}"));
+                    }
+                }
+            }
+        }
         let summary = match &sandbox_res {
             Ok(()) => crate::runtime::sandbox_session::deep_clean_sandbox_leftovers(),
             Err(_) => String::new(),
