@@ -2601,22 +2601,26 @@ impl AuthorityTreeSnapshot {
                         Err(cleanup) => Err(format!("{primary}; {cleanup}")),
                     };
                 }
-                let identity =
-                    Self::stat_destination_at(backup_parent, backup_name)
-                    .map_err(|error| {
-                        format!(
+                let identity = match Self::stat_destination_at(backup_parent, backup_name) {
+                    Ok(identity) => Some((
+                        u64::try_from(identity.st_dev)
+                            .map_err(|_| "code=authority_snapshot_root_device_invalid")?,
+                        inode_u64(identity.st_ino)
+                            .ok_or("code=authority_snapshot_root_inode_invalid")?,
+                        identity.st_mode & S_IFMT,
+                    )),
+                    // 条目被快照策略跳过（Other/超大文件不复制）→ 仅身份记录，
+                    // existed=false，恢复时不回滚该条目。
+                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+                    Err(error) => {
+                        return Err(format!(
                             "code=authority_snapshot_root_entry_validate_failed scope={} os_error={}",
                             scope.code(),
                             Self::os_error_code(&error)
-                        )
-                    })?;
-                Some((
-                    u64::try_from(identity.st_dev)
-                        .map_err(|_| "code=authority_snapshot_root_device_invalid")?,
-                    inode_u64(identity.st_ino)
-                        .ok_or("code=authority_snapshot_root_inode_invalid")?,
-                    identity.st_mode & S_IFMT,
-                ))
+                        ))
+                    }
+                };
+                identity
             }
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
             Err(error) => {
