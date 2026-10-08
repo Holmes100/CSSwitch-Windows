@@ -93,7 +93,7 @@ CSSwitch 当前聚焦于安全地把外部 Skill 接入隔离 Science，而不�
 
 - **查看现有 Skill：** 页面读取当前 Science 组织中真实存在的 Skill，展示来源、单 Skill / bundle 形态，以及 `attached`、`detached`、`unknown` 三种 OPERON 绑定状态。Science 未运行或身份无法确认时不会猜测结果。
 - **导入本地包：** 通过系统文件选择器导入 `.zip` 或 `.skill`，自动识别单 Skill 与多 Skill bundle；前端不接收或提交本地文件路径。
-- **从 GitHub 安装：** 可以让 Science Agent 通过 CSSwitch 的专用安装桥接安装准确的公开 GitHub 仓库、集合或 Skill 目录 URL。CSSwitch 宿主负责匿名下载、固定 commit、校验、提交和绑定，不使用 Science 或用户的 GitHub 凭证。
+- **从 GitHub 安装：** 可以让 Science Agent 通过 CSSwitch 的专用安装桥接安装准确的公开 GitHub 仓库、集合或 Skill 目录 URL。CSSwitch 宿主负责匿名下载、固定 commit、校验、提交和绑定，不使用 Science 或用户的 GitHub 凭证。该链路已在 Windows 真机完成端到端验证（Agent 在对话内调用 `install_external_skill` → 桥接投递 → 下载校验 → 安装 → `skill()` 加载）。
 - **安全提交：** 安装前检查 archive 大小、文件数量、路径穿越、符号链接、特殊文件和名称冲突；提交过程保持原子性，同名或已被修改的内容不会被静默覆盖。
 - **区分发现、绑定与加载：** 列表中“已绑定”只代表 OPERON 实时回读成功，不等于当前 Agent 会话已经加载。单 Skill 安装后仍应在 Science 中调用 `skill()` 做最终验证。
 - **bundle 生命周期：** bundle 会保留 `_shared` 和支持资源；从任一成员发起卸载都必须先展示完整影响列表并由用户确认，随后才整包 detach 和隔离回收，不做成员级静默删除。
@@ -115,7 +115,10 @@ CSSwitch 当前聚焦于安全地把外部 Skill 接入隔离 Science，而不�
 
 ## 当前边界
 
-- Windows（x86_64-pc-windows-msvc）v0.8.4 起全链路可用——登录、chat、第三方模型、web_search、文献 MCP、GitHub Skill 安装桥（连接器已在真机日志中多次连接成功）均已验证；无公开下载，需按[开发](#开发)自行构建。平台细节与构建方法见 [Windows 适配说明](./docs/windows-port.md)。
+## 当前边界
+
+- Windows（x86_64-pc-windows-msvc）v0.8.4 起全链路可用——登录、chat、第三方模型、web_search、文献 MCP、**对话内 GitHub Skill 安装**（`install_external_skill` 端到端真机验证：Win10 + 官方 0.1.56）均已跑通；无公开下载，需按[开发](#开发)自行构建。平台细节与构建方法见 [Windows 适配说明](./docs/windows-port.md)。
+- Windows 要求官方 Claude Science **0.1.55 或更新**（0.1.54 及更早的 Windows 构建会被版本检查拒绝并引导升级）；`host.skills` 相关的 claude.ai 403 在第三方模型模式下属预期行为，Skill 安装请使用 `install_external_skill`。
 - 第三方模式不提供 Anthropic 账号权限，托管 MCP、目录连接器和部分云端能力可能不可用。
 - Codex 实验功能已从本版本移除；旧配置中的 Codex 配置会在升级时被安全清除并提示。
 - Rust Gateway 已随应用打包，不需要单独安装 Python runtime。
