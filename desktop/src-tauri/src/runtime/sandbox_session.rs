@@ -405,7 +405,10 @@ impl Drop for AuthorityDirectoryStream {
 const MAX_AUTHORITY_SNAPSHOT_ENTRIES: usize = 131_072;
 const MAX_AUTHORITY_SNAPSHOT_FILE_BYTES: u64 = 512 * 1024 * 1024;
 const MAX_AUTHORITY_SNAPSHOT_TOTAL_BYTES: u64 = 8 * 1024 * 1024 * 1024;
-const MAX_AUTHORITY_FULL_COPY_FILE_BYTES: u64 = 128 * 1024 * 1024;
+// Windows 无 fclonefileat（macOS clonefile），全量复制是常态路径而非兜底：
+// 单文件上限对齐基础快照的单文件预算。真机实测官方数据目录含 >128MiB 的
+// 单文件（Electron/依赖产物），更紧的上限会让二次启动必然失败。
+const MAX_AUTHORITY_FULL_COPY_FILE_BYTES: u64 = MAX_AUTHORITY_SNAPSHOT_FILE_BYTES;
 const MAX_AUTHORITY_FULL_COPY_TOTAL_BYTES: u64 = 512 * 1024 * 1024;
 const SCIENCE_OWNED_OPAQUE_ROOTS: [&str; 5] =
     ["conda", "runtime", "seed-assets", "r-libs", "sbx-bind-src"];
@@ -2674,12 +2677,14 @@ impl AuthorityTreeSnapshot {
         file_bytes: u64,
         scope: AuthoritySnapshotScope,
         category: AuthoritySnapshotCategory,
+        source_name: &std::ffi::CStr,
     ) -> Result<(), String> {
         if file_bytes > MAX_AUTHORITY_FULL_COPY_FILE_BYTES {
             return Err(format!(
-                "code=authority_snapshot_clone_required scope={} category={} observed_bytes={file_bytes} full_copy_file_limit={MAX_AUTHORITY_FULL_COPY_FILE_BYTES}",
+                "code=authority_snapshot_clone_required scope={} category={} file={} observed_bytes={file_bytes} full_copy_file_limit={MAX_AUTHORITY_FULL_COPY_FILE_BYTES}",
                 scope.code(),
-                category.code()
+                category.code(),
+                source_name.to_string_lossy()
             ));
         }
         budget.full_copy_bytes =
@@ -2695,9 +2700,10 @@ impl AuthorityTreeSnapshot {
                 })?;
         if budget.full_copy_bytes > MAX_AUTHORITY_FULL_COPY_TOTAL_BYTES {
             return Err(format!(
-                "code=authority_snapshot_clone_required scope={} category={} observed_full_copy_bytes={} full_copy_total_limit={MAX_AUTHORITY_FULL_COPY_TOTAL_BYTES}",
+                "code=authority_snapshot_clone_required scope={} category={} file={} observed_full_copy_bytes={} full_copy_total_limit={MAX_AUTHORITY_FULL_COPY_TOTAL_BYTES}",
                 scope.code(),
                 category.code(),
+                source_name.to_string_lossy(),
                 budget.full_copy_bytes
             ));
         }
@@ -3030,7 +3036,7 @@ impl AuthorityTreeSnapshot {
                             )
                         })?,
                     Err(clone_error) if clone_unsupported(&clone_error) => {
-                        Self::charge_full_copy(budget, source_size, scope, category)?;
+                        Self::charge_full_copy(budget, source_size, scope, category, source_name)?;
                         let mut output = Self::open_destination_at(
                             destination_parent,
                             destination_name,
@@ -7469,24 +7475,25 @@ mod transaction_tests {
         assert!(overflow_error.contains("code=authority_snapshot_total_overflow"));
 
         let mut fallback_budget = AuthorityCopyBudget::default();
-        for _ in 0..4 {
-            AuthorityTreeSnapshot::charge_full_copy(
-                &mut fallback_budget,
-                MAX_AUTHORITY_FULL_COPY_FILE_BYTES,
-                AuthoritySnapshotScope::Test,
-                AuthoritySnapshotCategory::Other,
-            )
-            .expect("exact 512 MiB full-copy boundary must pass");
-        }
+        AuthorityTreeSnapshot::charge_full_copy(
+            &mut fallback_budget,
+            MAX_AUTHORITY_FULL_COPY_FILE_BYTES,
+            AuthoritySnapshotScope::Test,
+            AuthoritySnapshotCategory::Other,
+            c"blob-0",
+        )
+        .expect("a single file at the full-copy file boundary must pass");
         assert_eq!(
             fallback_budget.full_copy_bytes,
-            MAX_AUTHORITY_FULL_COPY_TOTAL_BYTES
+            MAX_AUTHORITY_FULL_COPY_TOTAL_BYTES,
+            "文件级上限对齐基础预算后，单文件即占满全量复制总量"
         );
         let fallback_total_error = AuthorityTreeSnapshot::charge_full_copy(
             &mut fallback_budget,
             1,
             AuthoritySnapshotScope::Test,
             AuthoritySnapshotCategory::Other,
+            c"blob-overflow",
         )
         .expect_err("full-copy boundary plus one must require clone support");
         assert!(fallback_total_error.contains("code=authority_snapshot_clone_required"));
@@ -7495,9 +7502,14 @@ mod transaction_tests {
             MAX_AUTHORITY_FULL_COPY_FILE_BYTES + 1,
             AuthoritySnapshotScope::Test,
             AuthoritySnapshotCategory::Other,
+            c"blob-too-big",
         )
         .expect_err("large individual full copy must require clone support");
         assert!(fallback_file_error.contains("code=authority_snapshot_clone_required"));
+        assert!(
+            fallback_file_error.contains("blob-too-big"),
+            "超限报错必须带文件名便于定位：{fallback_file_error}"
+        );
 
         let tmp = isolated_tmpdir("independent-inodes");
         let source = tmp.join("authority");
