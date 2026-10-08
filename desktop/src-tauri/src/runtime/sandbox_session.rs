@@ -405,9 +405,9 @@ impl Drop for AuthorityDirectoryStream {
 const MAX_AUTHORITY_SNAPSHOT_ENTRIES: usize = 131_072;
 const MAX_AUTHORITY_SNAPSHOT_FILE_BYTES: u64 = 512 * 1024 * 1024;
 const MAX_AUTHORITY_SNAPSHOT_TOTAL_BYTES: u64 = 8 * 1024 * 1024 * 1024;
-// Windows 无 fclonefileat（macOS clonefile），全量复制是常态路径而非兜底：
-// 单文件上限对齐基础快照的单文件预算。真机实测官方数据目录含 >128MiB 的
-// 单文件（Electron/依赖产物），更紧的上限会让二次启动必然失败。
+// 单文件可复制上限：超过即视为 Science 自有大内容，跳过复制（原地保留）。
+// 真机实测数据目录含 200-500MB 级文件（Electron 主程序、Agent 产物 CSV）。
+const MAX_AUTHORITY_SNAPSHOT_COPYABLE_FILE_BYTES: u64 = 64 * 1024 * 1024;
 const MAX_AUTHORITY_FULL_COPY_FILE_BYTES: u64 = MAX_AUTHORITY_SNAPSHOT_FILE_BYTES;
 const MAX_AUTHORITY_FULL_COPY_TOTAL_BYTES: u64 = 512 * 1024 * 1024;
 const SCIENCE_OWNED_OPAQUE_ROOTS: [&str; 5] =
@@ -730,7 +730,8 @@ fn remove_authority_snapshot_root(
             }
         }
     }
-    let parent = AuthorityTreeSnapshot::open_absolute_directory(expected_parent)?;
+    let parent = AuthorityTreeSnapshot::open_absolute_directory(expected_parent)
+        .map_err(|e| { eprintln!("[cleanup-diag] open_absolute_directory: {e}"); e })?;
     let name = AuthorityTreeSnapshot::destination_name(path).map_err(std::io::Error::other)?;
     let tombstone_name = std::ffi::CString::new(cleanup_tombstone_name(entry))
         .map_err(|_| std::io::Error::other("invalid cleanup tombstone name"))?;
@@ -749,7 +750,9 @@ fn remove_authority_snapshot_root(
             && current.st_mode & 0o777 == 0o700
             && current.st_uid == current_uid()
     };
-    match (inspect(&name)?, inspect(&tombstone_name)?) {
+    let current_stat = inspect(&name)?;
+    let tombstone_stat = inspect(&tombstone_name)?;
+    match (current_stat, tombstone_stat) {
         (None, None) => return sync_authority_cleanup_parent(&parent),
         (Some(current), None) if identity_matches(&current) => {
             let rename_result: Result<(), std::io::Error> = {
@@ -779,13 +782,28 @@ fn remove_authority_snapshot_root(
                     crate::platform::rename_no_replace(&from, &to)
                 }
             };
-            rename_result?;
-            sync_authority_cleanup_parent(&parent)?;
+            match rename_result {
+                Ok(()) => {
+                    sync_authority_cleanup_parent(&parent)?;
+                }
+                Err(e) if e.raw_os_error() == Some(5) => {
+                    // Windows 实测（0.1.56 真机 + 本测试）：即使目录树内句柄均
+                    // 已声明共享删除，MoveFileExW 对目录改名仍可能报
+                    // ACCESS_DENIED。墓碑改名只为崩溃可发现性，而快照目录内
+                    // 本就有 marker 标识身份——直接原地删除同样可被下次启动
+                    // 识别并继续修复。
+                    AuthorityTreeSnapshot::remove_tree_at(&parent, &name)?;
+                    sync_authority_cleanup_parent(&parent)?;
+                    return Ok(());
+                }
+                Err(e) => return Err(e),
+            }
         }
         (None, Some(current)) if identity_matches(&current) => {
             sync_authority_cleanup_parent(&parent)?;
         }
         _ => {
+            eprintln!("[cleanup-diag] identity mismatch: neither (present,matches) nor (tombstone,matches)");
             return Err(std::io::Error::other(
                 "authority snapshot cleanup identity changed",
             ))
@@ -793,12 +811,20 @@ fn remove_authority_snapshot_root(
     }
     let tombstone = AuthorityTreeSnapshot::stat_destination_at(&parent, &tombstone_name)?;
     if !identity_matches(&tombstone) {
+        eprintln!("[cleanup-diag] tombstone identity changed after rename");
         return Err(std::io::Error::other(
             "authority snapshot cleanup tombstone identity changed",
         ));
     }
-    AuthorityTreeSnapshot::remove_tree_at(&parent, &tombstone_name)?;
-    sync_authority_cleanup_parent(&parent)
+    if let Err(e) = AuthorityTreeSnapshot::remove_tree_at(&parent, &tombstone_name) {
+        eprintln!("[cleanup-diag] remove_tree_at: {e}");
+        return Err(e);
+    }
+    if let Err(e) = sync_authority_cleanup_parent(&parent) {
+        eprintln!("[cleanup-diag] final sync: {e}");
+        return Err(e);
+    }
+    Ok(())
 }
 
 
@@ -1693,6 +1719,14 @@ impl AuthorityTreeSnapshot {
             if flags & (O_CREAT | O_EXCL) == (O_CREAT | O_EXCL) {
                 options.create_new(true);
             }
+            // FILE_SHARE_DELETE：备份文件句柄存活期间必须允许祖先目录改名/
+            // 删除（快照清理 = 改名为墓碑再删除），否则句柄会把整个回滚树
+            // 锁死，restore 后的清理必然 ACCESS_DENIED。
+            options.share_mode(
+                windows_sys::Win32::Storage::FileSystem::FILE_SHARE_READ
+                    | windows_sys::Win32::Storage::FileSystem::FILE_SHARE_WRITE
+                    | windows_sys::Win32::Storage::FileSystem::FILE_SHARE_DELETE,
+            );
             options.custom_flags(crate::platform::no_follow_flags());
             let file = options.open(&path)?;
             if std::fs::symlink_metadata(&path)?.file_type().is_symlink() {
@@ -2989,6 +3023,13 @@ impl AuthorityTreeSnapshot {
                     category.code()
                 )
             })?;
+            // Science 自有大内容（Electron 缓存、Agent 产物 CSV 等）：不复制、
+            // 不恢复，原地保留。快照只保护小型权威状态（凭据/组织/技能）；
+            // 大文件复制慢、受预算约束，且回滚本就不应触碰 Science 自管内容。
+            // 恢复时只覆盖备份集内文件——缺备份的大文件原地原样保留。
+            if source_size > MAX_AUTHORITY_SNAPSHOT_COPYABLE_FILE_BYTES {
+                return Ok(());
+            }
             let source_mode = metadata.st_mode & 0o777;
             Self::charge_entry(budget, source_size, scope, category)?;
             let mut input = Self::open_destination_at(source_parent, source_name, O_RDONLY, 0)
@@ -7236,7 +7277,6 @@ mod transaction_tests {
     };
     use crate::config::{self, Config, RuntimeBindingCommit};
     use crate::provider_contracts::ModelPolicy;
-    #[cfg(unix)]
     use crate::runtime::proxy::ProxyAction;
     use crate::{AppState, SharedAppState};
     use csswitch_skill_install_core::AttachError;
@@ -8241,6 +8281,84 @@ mod transaction_tests {
                 "CSSwitch must neither copy nor delete opaque environment objects"
             );
         }
+        let _ = fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    fn one_click_snapshot_skips_science_owned_large_files() {
+        let _env_lock = TEST_ENV_LOCK
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
+        let tmp = isolated_tmpdir("large-science-owned-files");
+        let config_dir = tmp.join("config");
+        let sandbox_home = config_dir.join("sandbox/home");
+        let auth_dir = sandbox_home.join(".claude-science");
+        let config = Config::default();
+        config::save_to(&config_dir, &config).unwrap();
+        fs::create_dir_all(auth_dir.join("artifacts/proj")).unwrap();
+        fs::write(
+            auth_dir.join("active-org.json"),
+            b"{\"org_uuid\":\"org-test\"}\n",
+        )
+        .unwrap();
+        // 70 MB 稀疏文件（> 64 MiB 可复制上限）：代表 Agent 产物/Electron 级大内容。
+        let big = auth_dir.join("artifacts/proj/v1_export.csv");
+        let sparse = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&big)
+            .unwrap();
+        sparse.set_len(70 * 1024 * 1024).unwrap();
+        drop(sparse);
+        let state: SharedAppState = Arc::new(Mutex::new(AppState::default()));
+
+        let mut snapshot = OneClickAuthoritySnapshot::capture(
+            &config_dir,
+            &sandbox_home,
+            &auth_dir,
+            &config,
+            &state,
+        )
+        .expect("large science-owned files must not enter snapshot copy budgets");
+        // 探针：capture 刚结束时回滚目录能否被改名？
+        if let Some(tree) = snapshot.trees.first() {
+            if let Some(backup) = &tree.backup_parent {
+                if let Some(rollback_root) = backup.path.parent() {
+                    let probe_to = rollback_root
+                        .parent()
+                        .unwrap()
+                        .join("__rename_probe__");
+                    match fs::rename(rollback_root, &probe_to) {
+                        Ok(()) => {
+                            eprintln!("[cleanup-diag] probe rename OK——回滚目录无句柄锁定");
+                            fs::rename(&probe_to, rollback_root).unwrap();
+                        }
+                        Err(e) => {
+                            eprintln!("[cleanup-diag] probe rename FAILED: {e}");
+                        }
+                    }
+                }
+            }
+        }
+        fs::write(
+            auth_dir.join("active-org.json"),
+            b"{\"org_uuid\":\"org-candidate\"}\n",
+        )
+        .unwrap();
+
+        snapshot
+            .restore(&config_dir, &state, ProxyAction::Reused)
+            .expect("protected authority projection must restore independently");
+        assert_eq!(
+            fs::read(auth_dir.join("active-org.json")).unwrap(),
+            b"{\"org_uuid\":\"org-test\"}\n",
+            "小型权威状态必须正常备份并恢复"
+        );
+        assert_eq!(
+            fs::metadata(&big).unwrap().len(),
+            70 * 1024 * 1024,
+            "Science 自有大文件必须原地保留（不复制、不删除、不回滚）"
+        );
         let _ = fs::remove_dir_all(&tmp);
     }
 

@@ -380,9 +380,17 @@ pub fn open_dir(path: &Path) -> io::Result<File> {
         use std::os::windows::fs::OpenOptionsExt;
         // GENERIC_WRITE 是 FlushFileBuffers（目录 fsync 等价）的前提；
         // unix 上只读 fd fsync 目录合法，Windows 不是。
+        // FILE_SHARE_DELETE：句柄存活期间必须允许后续对目录的改名/删除——
+        // 权限快照的"改名为墓碑再删除"清理流程正依赖这一点（句柄由
+        // AuthorityTreeSnapshot 持有直到 restore 结束）。
         let file = OpenOptions::new()
             .read(true)
             .write(true)
+            .share_mode(
+                windows_sys::Win32::Storage::FileSystem::FILE_SHARE_READ
+                    | windows_sys::Win32::Storage::FileSystem::FILE_SHARE_WRITE
+                    | windows_sys::Win32::Storage::FileSystem::FILE_SHARE_DELETE,
+            )
             .custom_flags(
                 windows_sys::Win32::Storage::FileSystem::FILE_FLAG_BACKUP_SEMANTICS
                     | windows_sys::Win32::Storage::FileSystem::FILE_FLAG_OPEN_REPARSE_POINT,
