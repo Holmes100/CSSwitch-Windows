@@ -3067,9 +3067,10 @@ impl AuthorityTreeSnapshot {
                         }
                         let copied = std::io::copy(&mut input, &mut output).map_err(|error| {
                             format!(
-                                "code=authority_snapshot_copy_failed scope={} category={} os_error={}",
+                                "code=authority_snapshot_copy_failed scope={} category={} file={} os_error={}",
                                 scope.code(),
                                 category.code(),
+                                destination_name.to_string_lossy(),
                                 Self::os_error_code(&error)
                             )
                         })?;
