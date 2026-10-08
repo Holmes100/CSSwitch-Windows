@@ -52,6 +52,9 @@ pub struct GithubPackageSource {
 struct GithubEndpoints {
     api_base: reqwest::Url,
     raw_base: reqwest::Url,
+    // 镜像前缀（如 https://ghproxy.net）：设置后 api/raw/codeload 请求改写为
+    // 前缀 + 完整原始 URL。来源 CSSWITCH_GITHUB_MIRROR 环境变量。
+    mirror: Option<String>,
 }
 
 impl GithubEndpoints {
@@ -61,7 +64,37 @@ impl GithubEndpoints {
                 .expect("static GitHub API URL"),
             raw_base: reqwest::Url::parse("https://raw.githubusercontent.com/")
                 .expect("static GitHub raw URL"),
+            mirror: None,
         }
+    }
+
+    /// 生产入口：读 CSSWITCH_GITHUB_MIRROR 环境变量启用镜像前缀。
+    fn active() -> Self {
+        let mut endpoints = Self::production();
+        if let Ok(mirror) = std::env::var("CSSWITCH_GITHUB_MIRROR") {
+            let mirror = mirror.trim().trim_end_matches('/').to_string();
+            if mirror.starts_with("https://") || mirror.starts_with("http://") {
+                endpoints.mirror = Some(mirror);
+            }
+        }
+        endpoints
+    }
+
+    /// 镜像模式：把 GitHub 官方域名的 URL 改写为「镜像前缀 + 完整原始 URL」。
+    /// 非 GitHub 官方域名（测试 mock 等）原样返回。
+
+    fn apply_mirror(&self, url: reqwest::Url) -> reqwest::Url {
+        let Some(mirror) = &self.mirror else {
+            return url;
+        };
+        let github_host = matches!(
+            url.host_str(),
+            Some("api.github.com") | Some("raw.githubusercontent.com") | Some("codeload.github.com")
+        );
+        if !github_host {
+            return url;
+        }
+        reqwest::Url::parse(&format!("{mirror}/{url}")).unwrap_or(url)
     }
 }
 
@@ -197,7 +230,7 @@ pub fn install_github_package_with_progress(
     install_github_package_with_endpoints_and_progress(
         data_dir,
         source_url,
-        &GithubEndpoints::production(),
+        &GithubEndpoints::active(),
         progress,
     )
 }
@@ -288,7 +321,7 @@ pub fn install_github_skill(
     data_dir: &Path,
     source_url: &str,
 ) -> Result<InstallCommit, InstallError> {
-    install_github_skill_with_endpoints(data_dir, source_url, &GithubEndpoints::production())
+    install_github_skill_with_endpoints(data_dir, source_url, &GithubEndpoints::active())
 }
 
 fn install_github_skill_with_endpoints(
@@ -374,7 +407,7 @@ fn resolve_commit(
     if is_commit_sha(&source.reference) {
         return Ok(source.reference.to_ascii_lowercase());
     }
-    let mut url = endpoints.api_base.clone();
+    let mut url = endpoints.apply_mirror(endpoints.api_base.clone());
     url.path_segments_mut()
         .map_err(|_| error("INVALID_SOURCE_URL", "GitHub ref 非法", "source_resolution"))?
         .pop_if_empty()
@@ -412,7 +445,7 @@ fn resolve_package_commit(
     if is_commit_sha(&source.reference) {
         return Ok(source.reference.to_ascii_lowercase());
     }
-    let mut url = endpoints.api_base.clone();
+    let mut url = endpoints.apply_mirror(endpoints.api_base.clone());
     url.path_segments_mut()
         .map_err(|_| error("INVALID_SOURCE_URL", "GitHub ref 非法", "source_resolution"))?
         .pop_if_empty()
@@ -449,7 +482,7 @@ fn download_repository_archive(
     deadline: Instant,
     progress: &mut dyn FnMut(&str, &str),
 ) -> Result<Vec<u8>, InstallError> {
-    let mut zipball = endpoints.api_base.clone();
+    let mut zipball = endpoints.apply_mirror(endpoints.api_base.clone());
     zipball
         .path_segments_mut()
         .map_err(|_| error("INVALID_SOURCE_URL", "GitHub archive URL 非法", "download"))?
@@ -663,7 +696,7 @@ fn download_repository_tree_archive(
     deadline: Instant,
     progress: &mut dyn FnMut(&str, &str),
 ) -> Result<Vec<u8>, InstallError> {
-    let mut tree_url = endpoints.api_base.clone();
+    let mut tree_url = endpoints.apply_mirror(endpoints.api_base.clone());
     tree_url
         .path_segments_mut()
         .map_err(|_| {
@@ -894,7 +927,7 @@ fn download_github_raw_file(
     file: &GithubTreeFile,
 ) -> Result<Vec<u8>, InstallError> {
     ensure_deadline(deadline, "download_fallback")?;
-    let mut raw_url = endpoints.raw_base.clone();
+    let mut raw_url = endpoints.apply_mirror(endpoints.raw_base.clone());
     {
         let mut segments = raw_url.path_segments_mut().map_err(|_| {
             error(
@@ -1002,7 +1035,7 @@ fn download_skill_tree(
     endpoints: &GithubEndpoints,
     deadline: Instant,
 ) -> Result<crate::ValidatedPackage, InstallError> {
-    let mut tree_url = endpoints.api_base.clone();
+    let mut tree_url = endpoints.apply_mirror(endpoints.api_base.clone());
     tree_url
         .path_segments_mut()
         .map_err(|_| error("INVALID_SOURCE_URL", "GitHub tree URL 非法", "download"))?
@@ -1109,7 +1142,7 @@ fn download_skill_tree(
     let mut package_files = Vec::with_capacity(files.len());
     for file in files {
         ensure_deadline(deadline, "download")?;
-        let mut raw_url = endpoints.raw_base.clone();
+        let mut raw_url = endpoints.apply_mirror(endpoints.raw_base.clone());
         {
             let mut segments = raw_url
                 .path_segments_mut()
@@ -1491,10 +1524,44 @@ mod tests {
         data
     }
 
+
+    #[test]
+    fn apply_mirror_rewrites_only_github_hosts() {
+        let mut endpoints = GithubEndpoints::production();
+        endpoints.mirror = Some("https://ghproxy.net".to_string());
+        let rewritten = endpoints.apply_mirror(
+            reqwest::Url::parse("https://raw.githubusercontent.com/owner/repo/main/x").unwrap(),
+        );
+        assert_eq!(
+            rewritten.as_str(),
+            "https://ghproxy.net/https://raw.githubusercontent.com/owner/repo/main/x"
+        );
+        let codeload = endpoints.apply_mirror(
+            reqwest::Url::parse("https://codeload.github.com/owner/repo/zip/refs/heads/main")
+                .unwrap(),
+        );
+        assert_eq!(
+            codeload.as_str(),
+            "https://ghproxy.net/https://codeload.github.com/owner/repo/zip/refs/heads/main"
+        );
+        let foreign = endpoints.apply_mirror(reqwest::Url::parse("https://example.com/x").unwrap());
+        assert_eq!(foreign.as_str(), "https://example.com/x");
+        let bare = GithubEndpoints::production();
+        let unmirrored = bare.apply_mirror(
+            reqwest::Url::parse("https://api.github.com/repos/owner/repo").unwrap(),
+        );
+        assert_eq!(unmirrored.as_str(), "https://api.github.com/repos/owner/repo");
+    }
+
+    #[test]
+    fn production_has_no_mirror_by_default() {
+        assert!(GithubEndpoints::production().mirror.is_none());
+    }
     fn endpoints(port: u16) -> GithubEndpoints {
         GithubEndpoints {
             api_base: reqwest::Url::parse(&format!("http://127.0.0.1:{port}/")).unwrap(),
             raw_base: reqwest::Url::parse(&format!("http://127.0.0.1:{port}/")).unwrap(),
+            mirror: None,
         }
     }
 

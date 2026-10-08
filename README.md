@@ -94,6 +94,7 @@ CSSwitch 当前聚焦于安全地把外部 Skill 接入隔离 Science，而不�
 - **查看现有 Skill：** 页面读取当前 Science 组织中真实存在的 Skill，展示来源、单 Skill / bundle 形态，以及 `attached`、`detached`、`unknown` 三种 OPERON 绑定状态。Science 未运行或身份无法确认时不会猜测结果。
 - **导入本地包：** 通过系统文件选择器导入 `.zip` 或 `.skill`，自动识别单 Skill 与多 Skill bundle；前端不接收或提交本地文件路径。
 - **从 GitHub 安装：** 可以让 Science Agent 通过 CSSwitch 的专用安装桥接安装准确的公开 GitHub 仓库、集合或 Skill 目录 URL。CSSwitch 宿主负责匿名下载、固定 commit、校验、提交和绑定，不使用 Science 或用户的 GitHub 凭证。该链路已在 Windows 真机完成端到端验证（Agent 在对话内调用 `install_external_skill` → 桥接投递 → 下载校验 → 安装 → `skill()` 加载）。
+- **GitHub 镜像加速（可选）：** 访问 github.com 不畅的机器，设置环境变量 `CSSWITCH_GITHUB_MIRROR` 为镜像前缀（如 `https://ghproxy.net`），Skill 安装的 api/raw/codeload 请求会自动改写为「镜像 + 完整原始 URL」；不设置则直连官方。
 - **安全提交：** 安装前检查 archive 大小、文件数量、路径穿越、符号链接、特殊文件和名称冲突；提交过程保持原子性，同名或已被修改的内容不会被静默覆盖。
 - **区分发现、绑定与加载：** 列表中“已绑定”只代表 OPERON 实时回读成功，不等于当前 Agent 会话已经加载。单 Skill 安装后仍应在 Science 中调用 `skill()` 做最终验证。
 - **bundle 生命周期：** bundle 会保留 `_shared` 和支持资源；从任一成员发起卸载都必须先展示完整影响列表并由用户确认，随后才整包 detach 和隔离回收，不做成员级静默删除。
