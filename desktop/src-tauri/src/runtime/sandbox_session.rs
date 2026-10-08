@@ -3782,33 +3782,48 @@ impl AuthorityTreeSnapshot {
                 &computed_source_name
             }
         };
-        // 会话级 Skill 安装桥（CSSwitch-Skill-Bridge-*）是网关与沙箱的运行时
-        // 通道：restore 的“先删后复制”会把 live 桥一并删除，沙箱容器侧留下
-        // 悬空投影导致安装通道损坏（真机实测）。先把桥目录挪到旁边暂存，
-        // 恢复完成后挪回原位。
+        // 会话级 Skill 安装桥（CSSwitch-Skill-Bridge-*，位于 orgs/<uuid>/
+        // workspaces/ 下）是网关与沙箱的运行时通道：restore 的“先删后复制”
+        // 会把 live 桥一并删除，沙箱容器侧留下悬空投影导致安装通道损坏
+        // （真机实测）。先把桥挪到被恢复条目之外暂存，恢复完成后挪回原位。
         #[cfg(windows)]
         let mut parked_bridges: Vec<(std::path::PathBuf, std::path::PathBuf)> = Vec::new();
         #[cfg(windows)]
-        if self.scope == AuthoritySnapshotScope::ScienceData {
-            // 桥目录在受保护条目 mcp/ 之内：扫描 mcp 目录（树源目录）。
-            // 暂存位置必须在 mcp 之外（auth_dir 层级）——挪进 mcp 内会被
-            // 随后的 remove_tree 一起删除。
-            let scan_dir = dir_path(parent).join(source_name.to_string_lossy().as_ref());
-            let parking_root = dir_path(parent);
-            if let Ok(children) = std::fs::read_dir(&scan_dir) {
-                for child in children.flatten() {
-                    let name = child.file_name();
-                    let Some(name) = name.to_str() else { continue };
-                    if !name.starts_with("CSSwitch-Skill-Bridge-") {
-                        continue;
+        {
+            let scan_root = dir_path(parent).join(source_name.to_string_lossy().as_ref());
+            // 桥在受保护条目下两层（orgs/<uuid>/workspaces/CSSwitch-...）——扫入口+两层。
+            let mut scan_dirs = vec![scan_root.clone()];
+            if let Ok(subdirs) = std::fs::read_dir(&scan_root) {
+                for d in subdirs.flatten() {
+                    if d.path().is_dir() {
+                        scan_dirs.push(d.path());
+                        if let Ok(subsubdirs) = std::fs::read_dir(d.path()) {
+                            for dd in subsubdirs.flatten() {
+                                if dd.path().is_dir() {
+                                    scan_dirs.push(dd.path());
+                                }
+                            }
+                        }
                     }
-                    let original = scan_dir.join(name);
-                    let parked = parking_root.join(format!("{name}.restore-parking"));
-                    match std::fs::rename(&original, &parked) {
-                        Ok(()) => parked_bridges.push((parked, original)),
-                        Err(error) => eprintln!(
-                            "[bridge-park] 挪出失败（将继续恢复，桥可能被重建）：{error}"
-                        ),
+                }
+            }
+            let parking_root = dir_path(parent);
+            for dir in &scan_dirs {
+                if let Ok(children) = std::fs::read_dir(dir) {
+                    for child in children.flatten() {
+                        let name = child.file_name();
+                        let Some(name) = name.to_str() else { continue };
+                        if !name.starts_with("CSSwitch-Skill-Bridge-") {
+                            continue;
+                        }
+                        let original = child.path();
+                        let parked = parking_root.join(format!("{name}.restore-parking"));
+                        match std::fs::rename(&original, &parked) {
+                            Ok(()) => parked_bridges.push((parked, original)),
+                            Err(error) => eprintln!(
+                                "[bridge-park] 挪出失败（将继续恢复，桥可能被重建）：{error}"
+                            ),
+                        }
                     }
                 }
             }
@@ -8367,7 +8382,8 @@ mod transaction_tests {
         let notes = auth_dir.join("artifacts/proj/notes.txt");
         fs::write(&notes, b"prior-notes").unwrap();
         // 会话级 Skill 安装桥：live 状态必须跨快照/回滚保持原样。
-        let bridge = auth_dir.join("mcp/CSSwitch-Skill-Bridge-1bbd263c572b481d");
+        // （位置=新桥布局：orgs/<uuid>/workspaces/CSSwitch-Skill-Bridge-*）
+        let bridge = auth_dir.join("orgs/org-test/workspaces/CSSwitch-Skill-Bridge-1bbd263c572b481d");
         fs::create_dir_all(&bridge).unwrap();
         fs::write(bridge.join("request.json"), b"agent-request").unwrap();
         // 70 MB 稀疏文件（> 64 MiB 可复制上限）：代表 Agent 产物/Electron 级大内容。

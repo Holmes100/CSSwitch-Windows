@@ -306,10 +306,41 @@ pub(crate) fn skill_install_bridge_dir(secret: &str) -> Result<PathBuf, String> 
     }
     #[cfg(windows)]
     {
+        // 桥目录必须放在沙箱**可写**的授权根内：agent（沙箱内）要把安装请求
+        // 写进桥目录。0.1.55 移植时放在 mcp/ 下——但 mcp/ 对沙箱只读（真机
+        // shanbin 实测 mkdir 被拒），对话内安装永远走不通。改放当前 org 的
+        // workspaces（与 Agent 产物同级，实测沙箱可写）。
         let sandbox_home = crate::runtime::science::sandbox_home();
-        let mcp_root = sandbox_home.join(".claude-science").join("mcp");
+        let auth_dir = sandbox_home.join(".claude-science");
+        let mcp_root = auth_dir.join("mcp");
         std::fs::create_dir_all(&mcp_root).map_err(|error| error.to_string())?;
-        Ok(mcp_root.join(format!("CSSwitch-Skill-Bridge-{}", &secret[..24])))
+        let orgs_root = auth_dir.join("orgs");
+        let org_uuid = std::fs::read_to_string(auth_dir.join("active-org.json"))
+            .ok()
+            .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok())
+            .and_then(|value| {
+                value
+                    .get("org_uuid")
+                    .and_then(|v| v.as_str())
+                    .map(str::to_string)
+            })
+            .or_else(|| {
+                std::fs::read_dir(&orgs_root)
+                    .ok()?
+                    .flatten()
+                    .find(|entry| entry.path().is_dir())
+                    .and_then(|entry| entry.file_name().to_str().map(str::to_string))
+            })
+            .ok_or("无法确定当前 Science org，无法放置 Skill 安装桥")?;
+        let bridge_root = orgs_root
+            .join(&org_uuid)
+            .join("workspaces")
+            .join("_mcp-csswitch-skill-installer");
+        std::fs::create_dir_all(&bridge_root).map_err(|error| error.to_string())?;
+        Ok(bridge_root.join(format!(
+            "CSSwitch-Skill-Bridge-{}",
+            &secret[..24]
+        )))
     }
 }
 
