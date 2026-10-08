@@ -409,7 +409,10 @@ const MAX_AUTHORITY_SNAPSHOT_TOTAL_BYTES: u64 = 8 * 1024 * 1024 * 1024;
 // 真机实测数据目录含 200-500MB 级文件（Electron 主程序、Agent 产物 CSV）。
 const MAX_AUTHORITY_SNAPSHOT_COPYABLE_FILE_BYTES: u64 = 64 * 1024 * 1024;
 const MAX_AUTHORITY_FULL_COPY_FILE_BYTES: u64 = MAX_AUTHORITY_SNAPSHOT_FILE_BYTES;
-const MAX_AUTHORITY_FULL_COPY_TOTAL_BYTES: u64 = 512 * 1024 * 1024;
+// Windows 全量复制总量上限：0.1.56 起受保护条目（orgs 产物、mcp 缓存等）
+// 会随使用增长到数百 MB，512MiB 旧值必然超限（真机 shanbin 实测 537MB）。
+// 给足余量并配合报错带文件名，超限再迭代。
+const MAX_AUTHORITY_FULL_COPY_TOTAL_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 const SCIENCE_OWNED_OPAQUE_ROOTS: [&str; 5] =
     ["conda", "runtime", "seed-assets", "r-libs", "sbx-bind-src"];
 pub(crate) const SCIENCE_PROTECTED_AUTHORITY_ENTRIES: [&str; 10] = [
@@ -730,8 +733,7 @@ fn remove_authority_snapshot_root(
             }
         }
     }
-    let parent = AuthorityTreeSnapshot::open_absolute_directory(expected_parent)
-        .map_err(|e| { eprintln!("[cleanup-diag] open_absolute_directory: {e}"); e })?;
+    let parent = AuthorityTreeSnapshot::open_absolute_directory(expected_parent)?;
     let name = AuthorityTreeSnapshot::destination_name(path).map_err(std::io::Error::other)?;
     let tombstone_name = std::ffi::CString::new(cleanup_tombstone_name(entry))
         .map_err(|_| std::io::Error::other("invalid cleanup tombstone name"))?;
@@ -803,7 +805,6 @@ fn remove_authority_snapshot_root(
             sync_authority_cleanup_parent(&parent)?;
         }
         _ => {
-            eprintln!("[cleanup-diag] identity mismatch: neither (present,matches) nor (tombstone,matches)");
             return Err(std::io::Error::other(
                 "authority snapshot cleanup identity changed",
             ))
@@ -811,20 +812,12 @@ fn remove_authority_snapshot_root(
     }
     let tombstone = AuthorityTreeSnapshot::stat_destination_at(&parent, &tombstone_name)?;
     if !identity_matches(&tombstone) {
-        eprintln!("[cleanup-diag] tombstone identity changed after rename");
         return Err(std::io::Error::other(
             "authority snapshot cleanup tombstone identity changed",
         ));
     }
-    if let Err(e) = AuthorityTreeSnapshot::remove_tree_at(&parent, &tombstone_name) {
-        eprintln!("[cleanup-diag] remove_tree_at: {e}");
-        return Err(e);
-    }
-    if let Err(e) = sync_authority_cleanup_parent(&parent) {
-        eprintln!("[cleanup-diag] final sync: {e}");
-        return Err(e);
-    }
-    Ok(())
+    AuthorityTreeSnapshot::remove_tree_at(&parent, &tombstone_name)?;
+    sync_authority_cleanup_parent(&parent)
 }
 
 
@@ -2344,7 +2337,12 @@ impl AuthorityTreeSnapshot {
         if scope != AuthoritySnapshotScope::ScienceData {
             return AuthoritySnapshotCategory::Other;
         }
-        let Ok(relative) = current.strip_prefix(root) else {
+        // Windows：遍历句柄锚定的路径可能带 \\?\ 扩展前缀（extend_max_path），
+        // 而 root 参数是原始路径——前缀不一致会让 strip_prefix 失效，导致所有
+        // 条目都被误判为 Other（凭据/组织状态失去分类保护）。两侧先归一化。
+        let root = crate::platform::extend_max_path(root);
+        let current = crate::platform::extend_max_path(current);
+        let Ok(relative) = current.strip_prefix(&root) else {
             return AuthoritySnapshotCategory::Other;
         };
         let components = relative
@@ -2570,8 +2568,11 @@ impl AuthorityTreeSnapshot {
                     backup_name,
                     budget,
                     false,
+                    true,
                     scope,
-                    &source,
+                    // 分类器的 root 必须是数据目录根（条目相对于它判类别）；
+                    // 传条目自身路径会让所有条目被误判为 Other。
+                    source_parent_path,
                 )?;
                 let source_parent_still_bound =
                     Self::absolute_directory_binding_matches(
@@ -2602,13 +2603,13 @@ impl AuthorityTreeSnapshot {
                 }
                 let identity =
                     Self::stat_destination_at(backup_parent, backup_name)
-                        .map_err(|error| {
-                            format!(
-                                "code=authority_snapshot_root_entry_validate_failed scope={} os_error={}",
-                                scope.code(),
-                                Self::os_error_code(&error)
-                            )
-                        })?;
+                    .map_err(|error| {
+                        format!(
+                            "code=authority_snapshot_root_entry_validate_failed scope={} os_error={}",
+                            scope.code(),
+                            Self::os_error_code(&error)
+                        )
+                    })?;
                 Some((
                     u64::try_from(identity.st_dev)
                         .map_err(|_| "code=authority_snapshot_root_device_invalid")?,
@@ -2804,6 +2805,7 @@ impl AuthorityTreeSnapshot {
             &backup_name,
             budget,
             allow_symlink,
+            true,
             scope,
             root,
         )
@@ -2818,6 +2820,7 @@ impl AuthorityTreeSnapshot {
         destination_name: &std::ffi::CStr,
         budget: &mut AuthorityCopyBudget,
         allow_symlink: bool,
+        copy_other: bool,
         scope: AuthoritySnapshotScope,
         root: &Path,
     ) -> Result<(), String> {
@@ -3023,11 +3026,21 @@ impl AuthorityTreeSnapshot {
                     category.code()
                 )
             })?;
-            // Science 自有大内容（Electron 缓存、Agent 产物 CSV 等）：不复制、
-            // 不恢复，原地保留。快照只保护小型权威状态（凭据/组织/技能）；
-            // 大文件复制慢、受预算约束，且回滚本就不应触碰 Science 自管内容。
-            // 恢复时只覆盖备份集内文件——缺备份的大文件原地原样保留。
-            if source_size > MAX_AUTHORITY_SNAPSHOT_COPYABLE_FILE_BYTES {
+            // Science 自有大内容（Electron 缓存、Agent 产物 CSV 等）：capture
+            // 时不复制、不恢复，原地保留。快照只保护小型权威状态（凭据/组织/
+            // 技能）；大文件复制慢、受预算约束，且回滚本就不应触碰 Science
+            // 自管内容。restore 方向不跳过（保持原有恢复行为）。
+            if copy_other && source_size > MAX_AUTHORITY_SNAPSHOT_COPYABLE_FILE_BYTES {
+                return Ok(());
+            }
+            // Other = Science 自管未知内容（如 Agent 产物目录）：回滚从不恢复
+            // 它（restore 只覆盖受保护类别），Windows 全量复制它纯属浪费且必然
+            // 撞总预算（产物随使用无限累积）。仅 capture 方向跳过，行为与恢复
+            // 语义一致。
+            if copy_other
+                && scope == AuthoritySnapshotScope::ScienceData
+                && category == AuthoritySnapshotCategory::Other
+            {
                 return Ok(());
             }
             let source_mode = metadata.st_mode & 0o777;
@@ -3449,6 +3462,7 @@ impl AuthorityTreeSnapshot {
                 &child_name,
                 budget,
                 true,
+                copy_other,
                 scope,
                 root,
             )?;
@@ -3775,6 +3789,7 @@ impl AuthorityTreeSnapshot {
                 parent,
                 source_name,
                 &mut budget,
+                false,
                 false,
                 self.scope,
                 &backup_root,
@@ -7516,18 +7531,20 @@ mod transaction_tests {
         assert!(overflow_error.contains("code=authority_snapshot_total_overflow"));
 
         let mut fallback_budget = AuthorityCopyBudget::default();
-        AuthorityTreeSnapshot::charge_full_copy(
-            &mut fallback_budget,
-            MAX_AUTHORITY_FULL_COPY_FILE_BYTES,
-            AuthoritySnapshotScope::Test,
-            AuthoritySnapshotCategory::Other,
-            c"blob-0",
-        )
-        .expect("a single file at the full-copy file boundary must pass");
+        for _ in 0..4 {
+            AuthorityTreeSnapshot::charge_full_copy(
+                &mut fallback_budget,
+                MAX_AUTHORITY_FULL_COPY_FILE_BYTES,
+                AuthoritySnapshotScope::Test,
+                AuthoritySnapshotCategory::Other,
+                c"blob-0",
+            )
+            .expect("a single file at the full-copy file boundary must pass");
+        }
         assert_eq!(
             fallback_budget.full_copy_bytes,
             MAX_AUTHORITY_FULL_COPY_TOTAL_BYTES,
-            "文件级上限对齐基础预算后，单文件即占满全量复制总量"
+            "四个单文件上限的文件恰好占满全量复制总量"
         );
         let fallback_total_error = AuthorityTreeSnapshot::charge_full_copy(
             &mut fallback_budget,
@@ -7538,18 +7555,9 @@ mod transaction_tests {
         )
         .expect_err("full-copy boundary plus one must require clone support");
         assert!(fallback_total_error.contains("code=authority_snapshot_clone_required"));
-        let fallback_file_error = AuthorityTreeSnapshot::charge_full_copy(
-            &mut AuthorityCopyBudget::default(),
-            MAX_AUTHORITY_FULL_COPY_FILE_BYTES + 1,
-            AuthoritySnapshotScope::Test,
-            AuthoritySnapshotCategory::Other,
-            c"blob-too-big",
-        )
-        .expect_err("large individual full copy must require clone support");
-        assert!(fallback_file_error.contains("code=authority_snapshot_clone_required"));
         assert!(
-            fallback_file_error.contains("blob-too-big"),
-            "超限报错必须带文件名便于定位：{fallback_file_error}"
+            fallback_total_error.contains("blob-overflow"),
+            "超限报错必须带文件名便于定位：{fallback_total_error}"
         );
 
         let tmp = isolated_tmpdir("independent-inodes");
@@ -8301,6 +8309,9 @@ mod transaction_tests {
             b"{\"org_uuid\":\"org-test\"}\n",
         )
         .unwrap();
+        // Other 类小文件（Science 自管未知内容）：被快照跳过、也不参与回滚。
+        let notes = auth_dir.join("artifacts/proj/notes.txt");
+        fs::write(&notes, b"prior-notes").unwrap();
         // 70 MB 稀疏文件（> 64 MiB 可复制上限）：代表 Agent 产物/Electron 级大内容。
         let big = auth_dir.join("artifacts/proj/v1_export.csv");
         let sparse = fs::OpenOptions::new()
@@ -8320,31 +8331,12 @@ mod transaction_tests {
             &state,
         )
         .expect("large science-owned files must not enter snapshot copy budgets");
-        // 探针：capture 刚结束时回滚目录能否被改名？
-        if let Some(tree) = snapshot.trees.first() {
-            if let Some(backup) = &tree.backup_parent {
-                if let Some(rollback_root) = backup.path.parent() {
-                    let probe_to = rollback_root
-                        .parent()
-                        .unwrap()
-                        .join("__rename_probe__");
-                    match fs::rename(rollback_root, &probe_to) {
-                        Ok(()) => {
-                            eprintln!("[cleanup-diag] probe rename OK——回滚目录无句柄锁定");
-                            fs::rename(&probe_to, rollback_root).unwrap();
-                        }
-                        Err(e) => {
-                            eprintln!("[cleanup-diag] probe rename FAILED: {e}");
-                        }
-                    }
-                }
-            }
-        }
         fs::write(
             auth_dir.join("active-org.json"),
             b"{\"org_uuid\":\"org-candidate\"}\n",
         )
         .unwrap();
+        fs::write(&notes, b"candidate-notes").unwrap();
 
         snapshot
             .restore(&config_dir, &state, ProxyAction::Reused)
@@ -8353,6 +8345,11 @@ mod transaction_tests {
             fs::read(auth_dir.join("active-org.json")).unwrap(),
             b"{\"org_uuid\":\"org-test\"}\n",
             "小型权威状态必须正常备份并恢复"
+        );
+        assert_eq!(
+            fs::read(&notes).unwrap(),
+            b"candidate-notes",
+            "Other 类内容不参与回滚（与既有恢复语义一致）"
         );
         assert_eq!(
             fs::metadata(&big).unwrap().len(),
