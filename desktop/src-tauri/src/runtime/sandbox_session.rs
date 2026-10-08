@@ -2828,6 +2828,18 @@ impl AuthorityTreeSnapshot {
         scope: AuthoritySnapshotScope,
         root: &Path,
     ) -> Result<(), String> {
+        // 会话级 Skill 安装桥（CSSwitch-Skill-Bridge-*）是网关与沙箱的运行时
+        // 通道：不进备份，restore 也不得用旧备份覆盖 live 桥——真机实测回滚
+        // 恢复覆盖桥目录后，容器侧留下悬空投影导致安装通道损坏（mkdir 报
+        // 已存在 / dir 报找不到 / rmdir 报拒绝访问三连）。
+        for name in [source_name, destination_name] {
+            if name
+                .to_string_lossy()
+                .starts_with("CSSwitch-Skill-Bridge-")
+            {
+                return Ok(());
+            }
+        }
         let category = Self::category(scope, root, source_logical);
         let metadata = Self::stat_destination_at(source_parent, source_name).map_err(|error| {
             format!(
@@ -3770,6 +3782,37 @@ impl AuthorityTreeSnapshot {
                 &computed_source_name
             }
         };
+        // 会话级 Skill 安装桥（CSSwitch-Skill-Bridge-*）是网关与沙箱的运行时
+        // 通道：restore 的“先删后复制”会把 live 桥一并删除，沙箱容器侧留下
+        // 悬空投影导致安装通道损坏（真机实测）。先把桥目录挪到旁边暂存，
+        // 恢复完成后挪回原位。
+        #[cfg(windows)]
+        let mut parked_bridges: Vec<(std::path::PathBuf, std::path::PathBuf)> = Vec::new();
+        #[cfg(windows)]
+        if self.scope == AuthoritySnapshotScope::ScienceData {
+            // 桥目录在受保护条目 mcp/ 之内：扫描 mcp 目录（树源目录）。
+            // 暂存位置必须在 mcp 之外（auth_dir 层级）——挪进 mcp 内会被
+            // 随后的 remove_tree 一起删除。
+            let scan_dir = dir_path(parent).join(source_name.to_string_lossy().as_ref());
+            let parking_root = dir_path(parent);
+            if let Ok(children) = std::fs::read_dir(&scan_dir) {
+                for child in children.flatten() {
+                    let name = child.file_name();
+                    let Some(name) = name.to_str() else { continue };
+                    if !name.starts_with("CSSwitch-Skill-Bridge-") {
+                        continue;
+                    }
+                    let original = scan_dir.join(name);
+                    let parked = parking_root.join(format!("{name}.restore-parking"));
+                    match std::fs::rename(&original, &parked) {
+                        Ok(()) => parked_bridges.push((parked, original)),
+                        Err(error) => eprintln!(
+                            "[bridge-park] 挪出失败（将继续恢复，桥可能被重建）：{error}"
+                        ),
+                    }
+                }
+            }
+        }
         Self::remove_current_at(self.scope, parent, source_name)?;
         if self.existed {
             let mut budget = AuthorityCopyBudget::default();
@@ -3800,6 +3843,13 @@ impl AuthorityTreeSnapshot {
             )
             .map_err(|error| format!("无法恢复隔离 authority：{error}"))?;
             self.validate_backup_identity()?;
+        }
+        // 挪出去的 Skill 安装桥挪回原位（live 状态跨恢复保留）。
+        #[cfg(windows)]
+        for (parked, original) in &parked_bridges {
+            if let Err(error) = std::fs::rename(parked, original) {
+                eprintln!("[bridge-park] 挪回失败：{error}");
+            }
         }
         if !Self::absolute_directory_binding_matches(parent_path, parent).map_err(|error| {
             format!(
@@ -8316,6 +8366,10 @@ mod transaction_tests {
         // Other 类小文件（Science 自管未知内容）：被快照跳过、也不参与回滚。
         let notes = auth_dir.join("artifacts/proj/notes.txt");
         fs::write(&notes, b"prior-notes").unwrap();
+        // 会话级 Skill 安装桥：live 状态必须跨快照/回滚保持原样。
+        let bridge = auth_dir.join("mcp/CSSwitch-Skill-Bridge-1bbd263c572b481d");
+        fs::create_dir_all(&bridge).unwrap();
+        fs::write(bridge.join("request.json"), b"agent-request").unwrap();
         // 70 MB 稀疏文件（> 64 MiB 可复制上限）：代表 Agent 产物/Electron 级大内容。
         let big = auth_dir.join("artifacts/proj/v1_export.csv");
         let sparse = fs::OpenOptions::new()
@@ -8341,6 +8395,7 @@ mod transaction_tests {
         )
         .unwrap();
         fs::write(&notes, b"candidate-notes").unwrap();
+        fs::write(bridge.join("request.json"), b"candidate-request").unwrap();
 
         snapshot
             .restore(&config_dir, &state, ProxyAction::Reused)
@@ -8354,6 +8409,11 @@ mod transaction_tests {
             fs::read(&notes).unwrap(),
             b"candidate-notes",
             "Other 类内容不参与回滚（与既有恢复语义一致）"
+        );
+        assert_eq!(
+            fs::read(bridge.join("request.json")).unwrap(),
+            b"candidate-request",
+            "Skill 安装桥的 live 状态必须跨快照/回滚原样保留"
         );
         assert_eq!(
             fs::metadata(&big).unwrap().len(),
