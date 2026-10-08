@@ -359,6 +359,42 @@ pub(crate) async fn fetch_models(
     .await
 }
 
+/// 保存 GitHub 镜像前缀（Skill 安装下载用）。空值 = 直连官方。
+/// 立即写沙箱数据目录的 github-mirror 单行文件——skill-install-core 每次
+/// 安装时读取，运行中的会话下一次安装即生效，无需重启。
+#[tauri::command]
+pub(crate) fn set_github_mirror(
+    url: Option<String>,
+) -> Result<String, String> {
+    let trimmed = url.as_deref().map(str::trim).unwrap_or("");
+    let validated = if trimmed.is_empty() {
+        None
+    } else if trimmed.starts_with("https://") || trimmed.starts_with("http://") {
+        Some(trimmed.trim_end_matches('/').to_string())
+    } else {
+        return Err("镜像地址必须以 http:// 或 https:// 开头（留空 = 直连官方）".into());
+    };
+    let dir = config::default_dir();
+    config::update(&dir, |cfg| {
+        cfg.github_mirror = validated.clone();
+    })
+    .map_err(|e| format!("保存配置失败：{e}"))?;
+    let data_dir = crate::runtime::science::sandbox_data_dir();
+    std::fs::create_dir_all(&data_dir).map_err(|e| format!("创建数据目录失败：{e}"))?;
+    let mirror_file = data_dir.join("github-mirror");
+    match &validated {
+        Some(mirror) => std::fs::write(&mirror_file, mirror)
+            .map_err(|e| format!("写入镜像文件失败：{e}"))?,
+        None => {
+            let _ = std::fs::remove_file(&mirror_file);
+        }
+    }
+    Ok(match &validated {
+        Some(mirror) => format!("GitHub 镜像已设置：{mirror}。下一次安装立即生效。"),
+        None => "GitHub 镜像已清除，Skill 安装将直连官方。".into(),
+    })
+}
+
 #[tauri::command]
 pub(crate) async fn stop_all(
     app: tauri::AppHandle,

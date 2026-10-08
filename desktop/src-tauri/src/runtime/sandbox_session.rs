@@ -5791,6 +5791,26 @@ fn sandbox_launch_command(
                 }
             }
         }
+        // GitHub 镜像（Skill 安装下载用）：从用户配置写入数据目录单行文件，
+        // 由 csswitch-skill-install-core 在每次安装时读取。空 = 直连官方。
+        let github_mirror = config::load_from(&crate::config::default_dir())
+            .ok()
+            .and_then(|cfg| cfg.github_mirror);
+        let mirror_path = data_dir.join("github-mirror");
+        match github_mirror.as_deref().map(str::trim) {
+            Some(mirror) if !mirror.is_empty() => {
+                if std::fs::read_to_string(&mirror_path).unwrap_or_default().trim()
+                    != mirror
+                {
+                    let _ = std::fs::write(&mirror_path, mirror);
+                }
+            }
+            _ => {
+                if mirror_path.exists() {
+                    let _ = std::fs::remove_file(&mirror_path);
+                }
+            }
+        }
         let mut command = Command::new(science_bin);
         command
             .arg("serve")

@@ -824,6 +824,9 @@ async function loadConfig(options) {
     els.proxyPort.value = configState.proxy_port;
     els.sandboxPort.value = configState.sandbox_port;
     els.reuseSystemSsh.checked = configState.reuse_system_ssh;
+    if (els.githubMirrorInput && document.activeElement !== els.githubMirrorInput) {
+      els.githubMirrorInput.value = cfg.github_mirror || "";
+    }
     applyMode(cfg.mode === "official" ? "official" : "proxy");
     renderList();
     showView("list");
@@ -1892,6 +1895,7 @@ function wire() {
     "historyRecoverySec", "historyRecoveryText", "historyRecoveryChoices", "historyRecoveryCancelBtn",
     "msg", "browserFallback", "browserFallbackUrl", "browserFallbackCopyBtn", "browserFallbackRetryBtn", "brandDot", "openBrowserBtn", "doctorBtn", "updateBtn", "verLabel",
     "reportBtn", "logsBtn", "exportDiagBtn", "repairTxnBtn", "quitBtn", "modeSeg", "proxyPort", "sandboxPort", "reuseSystemSsh", "advSec",
+    "githubMirrorInput", "saveMirrorBtn",
     "connectionOverview", "listSec", "profileList", "newBtn",
     "wizSec", "wizTemplate", "wizTemplateChips", "wizTplLabel", "wizTplHint", "wizName", "wizBaseGroup", "wizBase", "wizBaseHint",
     "wizModelGroup", "wizModelLabel", "wizFetchBtn", "wizModelInfo", "wizModel", "wizModelHint", "wizCatalogMeta", "wizStaticCatalog", "wizRoleQuality", "wizRoleFast", "wizRoleFable", "wizCatalogWarning", "wizKeyGroup", "wizKey", "wizSaveBtn", "wizCancelBtn",
@@ -2003,6 +2007,18 @@ function wire() {
   els.logsBtn.addEventListener("click", () =>
     call("open_logs").catch((e) => setMsg("打开日志失败：" + e, "err"))
   );
+  els.saveMirrorBtn.addEventListener("click", async () => {
+    const url = els.githubMirrorInput.value.trim();
+    els.saveMirrorBtn.disabled = true;
+    try {
+      const message = await call("set_github_mirror", { url: url || null });
+      setMsg(message, "ok");
+    } catch (e) {
+      setMsg("镜像保存失败：" + e, "err");
+    } finally {
+      els.saveMirrorBtn.disabled = false;
+    }
+  });
   els.exportDiagBtn.addEventListener("click", async () => {
     els.exportDiagBtn.disabled = true;
     setMsg("正在打包诊断日志（自动脱敏 API Key）…");

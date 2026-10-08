@@ -670,6 +670,10 @@ pub struct Config {
     /// 运行模式："proxy"（第三方）| "official"（真实 Claude Science）。
     #[serde(default = "default_mode")]
     pub mode: String,
+    /// GitHub 镜像前缀（如 https://gh-proxy.com）：Skill 安装的 api/raw/codeload
+    /// 请求改写为「镜像 + 完整原始 URL」。空 = 直连官方。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub github_mirror: Option<String>,
     /// 一次性迁移提示（#9 甲：回填默认模型后告知用户）。get_config 读后清空。
     #[serde(default)]
     pub pending_notice: Option<String>,
@@ -694,6 +698,7 @@ impl Default for Config {
             reuse_system_ssh: false,
             secret: String::new(),
             mode: default_mode(),
+            github_mirror: None,
             pending_notice: None,
             runtime_binding: None,
             runtime_transaction: None,
@@ -1101,6 +1106,7 @@ pub fn migrate_v3_to_v4(v3: crate::config_legacy::ConfigV3) -> io::Result<Config
         reuse_system_ssh: v3.reuse_system_ssh,
         secret: v3.secret,
         mode: v3.mode,
+        github_mirror: None,
         pending_notice,
         runtime_binding: None,
         runtime_transaction: None,

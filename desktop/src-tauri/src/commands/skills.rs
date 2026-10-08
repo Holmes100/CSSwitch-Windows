@@ -21,6 +21,7 @@ use crate::skill_manager::external::scan_named_external_home_skill_for_test;
 use crate::skill_manager::external::{scan_external_home_skills, ExternalSkillScanReport};
 use crate::skill_manager::inspection::InspectionSummary;
 use crate::skill_manager::model::{InstalledSkill, SkillId};
+
 use crate::skill_manager::store::{EnableOutcome, InstallOutcome, SkillManager, UninstallOutcome};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]

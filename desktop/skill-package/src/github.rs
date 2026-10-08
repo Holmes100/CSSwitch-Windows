@@ -68,11 +68,21 @@ impl GithubEndpoints {
         }
     }
 
-    /// 生产入口：读 CSSWITCH_GITHUB_MIRROR 环境变量启用镜像前缀。
-    fn active() -> Self {
+    /// 生产入口：镜像来源优先级 = 数据目录 github-mirror 文件（UI 设置，
+    /// CSSwitch 每次启动写入）> CSSWITCH_GITHUB_MIRROR 环境变量 > 直连官方。
+    fn active(data_dir: &Path) -> Self {
         let mut endpoints = Self::production();
-        if let Ok(mirror) = std::env::var("CSSWITCH_GITHUB_MIRROR") {
-            let mirror = mirror.trim().trim_end_matches('/').to_string();
+        let file_mirror = std::fs::read_to_string(data_dir.join("github-mirror"))
+            .ok()
+            .map(|text| text.trim().to_string())
+            .filter(|text| !text.is_empty());
+        let mirror = file_mirror.or_else(|| {
+            std::env::var("CSSWITCH_GITHUB_MIRROR")
+                .ok()
+                .map(|value| value.trim().trim_end_matches('/').to_string())
+                .filter(|value| !value.is_empty())
+        });
+        if let Some(mirror) = mirror {
             if mirror.starts_with("https://") || mirror.starts_with("http://") {
                 endpoints.mirror = Some(mirror);
             }
@@ -230,7 +240,7 @@ pub fn install_github_package_with_progress(
     install_github_package_with_endpoints_and_progress(
         data_dir,
         source_url,
-        &GithubEndpoints::active(),
+        &GithubEndpoints::active(data_dir),
         progress,
     )
 }
@@ -321,7 +331,7 @@ pub fn install_github_skill(
     data_dir: &Path,
     source_url: &str,
 ) -> Result<InstallCommit, InstallError> {
-    install_github_skill_with_endpoints(data_dir, source_url, &GithubEndpoints::active())
+    install_github_skill_with_endpoints(data_dir, source_url, &GithubEndpoints::active(data_dir))
 }
 
 fn install_github_skill_with_endpoints(

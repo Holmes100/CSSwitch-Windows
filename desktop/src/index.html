@@ -165,6 +165,11 @@
                 <button class="btn" id="refreshSkillsBtn" type="button">刷新</button>
                 <button class="btn primary" id="importSkillBtn" type="button" disabled>导入本地 Skill 包</button>
               </div>
+              <div class="mirror-row" style="display:flex;gap:8px;margin-top:10px;align-items:center;">
+                <label for="githubMirrorInput" style="white-space:nowrap;font-size:12px;color:var(--text-secondary,#666)">GitHub 镜像（可选）</label>
+                <input id="githubMirrorInput" type="text" placeholder="留空直连官方，如 https://gh-proxy.com" style="flex:1" />
+                <button class="btn" id="saveMirrorBtn" type="button">保存</button>
+              </div>
             </section>
             <div id="skillPageRoot" class="skill-page-root">
               <div class="skill-loading">正在载入 Skill 页面…</div>

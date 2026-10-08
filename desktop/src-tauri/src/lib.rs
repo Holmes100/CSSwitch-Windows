@@ -376,6 +376,7 @@ pub fn run() {
             commands::profiles::get_config,
             commands::profiles::list_templates,
             commands::runtime::set_settings,
+            commands::runtime::set_github_mirror,
             commands::runtime::set_mode,
             commands::runtime::open_official,
             commands::profiles::create_profile,
