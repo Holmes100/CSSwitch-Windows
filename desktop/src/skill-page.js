@@ -157,14 +157,17 @@ export class SkillPage {
     const attachmentOptions = Object.entries(ATTACHMENT_META).map(([value, meta]) =>
       `<option value="${value}"${this.filters.attachment === value ? " selected" : ""}>${escapeHtml(meta.label)}</option>`
     ).join("");
+    const mirror = data?.github_mirror ?? "";
+    const showSkills = this.activePanel !== "mirror";
     this.root.innerHTML = `<div class="skill-page-content"${this.detailId ? " inert aria-hidden=\"true\"" : ""}>
       <div class="extension-toolbar">
-        <div class="extension-tabs" role="tablist" aria-label="Skill 与 MCP">
-          <button class="extension-tab active" type="button" role="tab" data-panel="skills" aria-selected="true">Skills</button>
-          <button class="extension-tab" type="button" role="tab" aria-selected="false" data-panel="mirror">代理</button>
+        <div class="extension-tabs" role="tablist" aria-label="Skill 与代理">
+          <button class="extension-tab${showSkills ? " active" : ""}" type="button" role="tab" data-panel="skills" aria-selected="${showSkills}">Skills</button>
+          <button class="extension-tab${showSkills ? "" : " active"}" type="button" role="tab" data-panel="mirror" aria-selected="${!showSkills}">代理</button>
         </div>
         ${this.refreshedAt ? `<span class="refresh-stamp">更新于 ${escapeHtml(this.refreshedAt.toLocaleTimeString("zh-CN", { hour12: false }))}</span>` : ""}
       </div>
+      ${showSkills ? `
       ${data ? this.renderSummary(data) : ""}
       ${data?.warnings?.length ? this.renderWarnings(data.warnings) : ""}
       <section class="surface skill-filter-surface">
@@ -176,11 +179,22 @@ export class SkillPage {
         </div>
       </section>
       <div data-skill-results>${this.renderBody(data, items)}</div>
+      ` : `
+      <section class="surface skill-filter-surface">
+        <p style="font-size:12px;color:var(--sub,#888);margin:0 0 8px">Skill 安装的 GitHub 下载支持配置镜像加速；留空直连官方。保存后立即生效，无需重启。</p>
+        <div style="display:flex;gap:8px;align-items:center;box-sizing:border-box;">
+          <label for="githubMirrorInput" style="white-space:nowrap;font-size:13px;color:#666">GitHub 镜像</label>
+          <input id="githubMirrorInput" type="text" placeholder="留空直连官方，如 https://gh-proxy.com" style="flex:1 1 auto;min-width:260px;box-sizing:border-box;height:32px;padding:0 8px;font-size:13px" value="${escapeHtml(mirror)}" />
+          <button class="btn" id="saveMirrorBtn" type="button">保存</button>
+        </div>
+      </section>
+      `}
       </div>
       ${this.renderDetail(data)}
     `;
-    this.syncPanels();
+    this.updateToolbarState();
   }
+
 
   renderResults() {
     const target = this.root.querySelector("[data-skill-results]");
@@ -302,6 +316,24 @@ export class SkillPage {
     }
   }
 
+  switchPanel(panel) {
+    this.activePanel = panel || "skills";
+    this.syncPanels();
+  }
+
+
+
+  updateToolbarState() {
+    const stamp = this.root.querySelector(".refresh-stamp");
+    if (stamp) {
+      stamp.hidden = !this.refreshedAt;
+      if (this.refreshedAt) {
+        stamp.textContent = "更新于 " + this.refreshedAt.toLocaleTimeString("zh-CN", { hour12: false });
+      }
+    }
+    this.syncButtons();
+  }
+
   syncPanels() {
     const active = this.activePanel || "skills";
     const content = this.root.querySelector(".skill-page-content");
@@ -315,11 +347,15 @@ export class SkillPage {
     });
   }
 
+  switchPanel(panel) {
+    this.activePanel = panel === "mirror" ? "mirror" : "skills";
+    this.render();
+  }
+
   onClick(event) {
     const panelButton = event.target.closest("[data-panel]");
     if (panelButton) {
-      this.activePanel = panelButton.dataset.panel;
-      this.syncPanels();
+      this.switchPanel(panelButton.dataset.panel);
       return;
     }
     const target = event.target.closest("[data-action]");

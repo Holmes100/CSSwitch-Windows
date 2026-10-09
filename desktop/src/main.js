@@ -2007,16 +2007,20 @@ function wire() {
   els.logsBtn.addEventListener("click", () =>
     call("open_logs").catch((e) => setMsg("打开日志失败：" + e, "err"))
   );
-  els.saveMirrorBtn.addEventListener("click", async () => {
-    const url = els.githubMirrorInput.value.trim();
-    els.saveMirrorBtn.disabled = true;
+  // 镜像输入行在 skill-page 动态渲染（代理面板）——用 document 委托保证动态元素可点。
+  document.addEventListener("click", async (event) => {
+    const button = event.target.closest("#saveMirrorBtn");
+    if (!button) return;
+    const input = document.getElementById("githubMirrorInput");
+    const url = (input ? input.value : "").trim();
+    button.disabled = true;
     try {
       const message = await call("set_github_mirror", { url: url || null });
       setMsg(message, "ok");
     } catch (e) {
       setMsg("镜像保存失败：" + e, "err");
     } finally {
-      els.saveMirrorBtn.disabled = false;
+      button.disabled = false;
     }
   });
   els.exportDiagBtn.addEventListener("click", async () => {
