@@ -55,6 +55,7 @@ export class SkillPage {
     this.refreshButton = options.refreshButton;
     this.importButton = options.importButton;
     this.filters = { query: "", source: "all", attachment: "all" };
+    this.activePanel = "skills";
     this.data = null;
     this.error = "";
     this.loading = false;
@@ -159,8 +160,8 @@ export class SkillPage {
     this.root.innerHTML = `<div class="skill-page-content"${this.detailId ? " inert aria-hidden=\"true\"" : ""}>
       <div class="extension-toolbar">
         <div class="extension-tabs" role="tablist" aria-label="Skill 与 MCP">
-          <button class="extension-tab active" type="button" role="tab" aria-selected="true">Skills</button>
-          <button class="extension-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled>MCP 暂未开放</button>
+          <button class="extension-tab active" type="button" role="tab" data-panel="skills" aria-selected="true">Skills</button>
+          <button class="extension-tab" type="button" role="tab" aria-selected="false" data-panel="mirror">代理</button>
         </div>
         ${this.refreshedAt ? `<span class="refresh-stamp">更新于 ${escapeHtml(this.refreshedAt.toLocaleTimeString("zh-CN", { hour12: false }))}</span>` : ""}
       </div>
@@ -178,6 +179,7 @@ export class SkillPage {
       </div>
       ${this.renderDetail(data)}
     `;
+    this.syncPanels();
   }
 
   renderResults() {
@@ -300,7 +302,26 @@ export class SkillPage {
     }
   }
 
+  syncPanels() {
+    const active = this.activePanel || "skills";
+    const content = this.root.querySelector(".skill-page-content");
+    if (content) content.hidden = active !== "skills";
+    const mirror = document.getElementById("mirrorPanel");
+    if (mirror) mirror.hidden = active !== "mirror";
+    this.root.querySelectorAll(".extension-tab").forEach((tab) => {
+      const isActive = tab.dataset.panel === active;
+      tab.classList.toggle("active", isActive);
+      tab.setAttribute("aria-selected", String(isActive));
+    });
+  }
+
   onClick(event) {
+    const panelButton = event.target.closest("[data-panel]");
+    if (panelButton) {
+      this.activePanel = panelButton.dataset.panel;
+      this.syncPanels();
+      return;
+    }
     const target = event.target.closest("[data-action]");
     if (!target) return;
     const action = target.dataset.action;
