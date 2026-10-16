@@ -332,10 +332,10 @@ pub(crate) fn skill_install_bridge_dir(secret: &str) -> Result<PathBuf, String> 
                     .and_then(|entry| entry.file_name().to_str().map(str::to_string))
             })
             .ok_or("无法确定当前 Science org，无法放置 Skill 安装桥")?;
-        let bridge_root = orgs_root
-            .join(&org_uuid)
-            .join("workspaces")
-            .join("_mcp-csswitch-skill-installer");
+        // 桥目录名不能带 _mcp-csswitch-skill-installer——与 operon-winsbx 的
+        // workspace stable frame 命名冲突（真机 FXS 实测：grant rows 悬空，
+        // MCP server 无法启动）。直接放 workspaces 授权根下。
+        let bridge_root = orgs_root.join(&org_uuid).join("workspaces");
         std::fs::create_dir_all(&bridge_root).map_err(|error| error.to_string())?;
         Ok(bridge_root.join(format!(
             "CSSwitch-Skill-Bridge-{}",
