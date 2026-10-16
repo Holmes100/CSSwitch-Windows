@@ -15,6 +15,13 @@ fn write_status(mut stream: TcpStream, code: u16, reason: &str) {
 
 pub fn is_blocked_host(host: &str) -> bool {
     let host = host.trim_matches('.').to_ascii_lowercase();
+    // 放行 Science 的 hosted MCP 连接器（pubmed/biorxiv/clinical-trials/
+    // chembl 走 *.mcp.claude.com）：0.1.60 起官方 daemon 应用代理 env，
+    // 这些连接器经网关出网——不放行会被本函数 401，文献检索全部失败
+    // （真机 LAPTOP-NFD0IA1E 实测）。主域封禁维持不变。
+    if host.ends_with(".mcp.claude.com") {
+        return false;
+    }
     host == "anthropic.com"
         || host.ends_with(".anthropic.com")
         || host == "claude.ai"
