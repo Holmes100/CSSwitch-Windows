@@ -1,0 +1,23 @@
+name: build-windows-desktop
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/build-windows.yml']
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build desktop.exe (含 gateway sidecar)
+        run: cargo build --release --manifest-path desktop/src-tauri/Cargo.toml
+        env:
+          CARGO_BUILD_JOBS: "4"
+      - name: 校验产物存在
+        run: Get-Item desktop/src-tauri/target/release/desktop.exe | Select-Object Length,VersionInfo
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-windows-x64
+          path: desktop/src-tauri/target/release/desktop.exe
+          if-no-files-found: error
