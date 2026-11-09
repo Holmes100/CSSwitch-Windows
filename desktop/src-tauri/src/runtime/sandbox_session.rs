@@ -403,8 +403,8 @@ impl Drop for AuthorityDirectoryStream {
 }
 
 const MAX_AUTHORITY_SNAPSHOT_ENTRIES: usize = 131_072;
-const MAX_AUTHORITY_SNAPSHOT_FILE_BYTES: u64 = 512 * 1024 * 1024;
-const MAX_AUTHORITY_SNAPSHOT_TOTAL_BYTES: u64 = 8 * 1024 * 1024 * 1024;
+const MAX_AUTHORITY_SNAPSHOT_FILE_BYTES: u64 = 16 * 1024 * 1024 * 1024;
+const MAX_AUTHORITY_SNAPSHOT_TOTAL_BYTES: u64 = 64 * 1024 * 1024 * 1024;
 // 单文件可复制上限：超过即视为 Science 自有大内容，跳过复制（原地保留）。
 // 真机实测数据目录含 200-500MB 级文件（Electron 主程序、Agent 产物 CSV）。
 const MAX_AUTHORITY_SNAPSHOT_COPYABLE_FILE_BYTES: u64 = 64 * 1024 * 1024;
@@ -412,7 +412,7 @@ const MAX_AUTHORITY_FULL_COPY_FILE_BYTES: u64 = MAX_AUTHORITY_SNAPSHOT_FILE_BYTE
 // Windows 全量复制总量上限：0.1.56 起受保护条目（orgs 产物、mcp 缓存等）
 // 会随使用增长到数百 MB，512MiB 旧值必然超限（真机 shanbin 实测 537MB）。
 // 给足余量并配合报错带文件名，超限再迭代。
-const MAX_AUTHORITY_FULL_COPY_TOTAL_BYTES: u64 = 2 * 1024 * 1024 * 1024;
+const MAX_AUTHORITY_FULL_COPY_TOTAL_BYTES: u64 = 64 * 1024 * 1024 * 1024;
 const SCIENCE_OWNED_OPAQUE_ROOTS: [&str; 5] =
     ["conda", "runtime", "seed-assets", "r-libs", "sbx-bind-src"];
 pub(crate) const SCIENCE_PROTECTED_AUTHORITY_ENTRIES: [&str; 10] = [
@@ -1654,7 +1654,7 @@ impl AuthorityTreeSnapshot {
         {
             return Err(std::io::Error::from_raw_os_error(errno));
         }
-        #[cfg(unix)]
+        #[cfg(target_os = "macos")]
         {
             use std::os::fd::AsRawFd;
             let result =
@@ -1664,6 +1664,12 @@ impl AuthorityTreeSnapshot {
             } else {
                 Err(std::io::Error::last_os_error())
             }
+        }
+        #[cfg(all(unix, not(target_os = "macos")))]
+        {
+            // Linux 无 fclonefileat（macOS clonefile）：按设计回退到调用方的
+            let _ = (source, parent, destination_name);
+            Err(std::io::Error::other("clonefile unsupported on linux"))
         }
         #[cfg(windows)]
         {
@@ -2042,8 +2048,13 @@ impl AuthorityTreeSnapshot {
             let stream = AuthorityDirectoryStream(stream);
             let mut names = Vec::new();
             loop {
+                #[cfg(target_os = "macos")]
                 unsafe {
                     *libc::__error() = 0;
+                }
+                #[cfg(not(target_os = "macos"))]
+                unsafe {
+                    *libc::__errno_location() = 0;
                 }
                 let entry = unsafe { libc::readdir(stream.0) };
                 if entry.is_null() {
@@ -2884,14 +2895,20 @@ impl AuthorityTreeSnapshot {
                     let target_name = std::ffi::CString::new(target_bytes.clone())
                         .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error));
                     match target_name {
-                        Ok(target_name) => unsafe {
-                            libc::symlinkat(
-                                target_name.as_ptr(),
-                                destination_parent.as_raw_fd(),
-                                destination_name.as_ptr(),
-                            )
+                        Ok(target_name) => {
+                            let result = unsafe {
+                                libc::symlinkat(
+                                    target_name.as_ptr(),
+                                    destination_parent.as_raw_fd(),
+                                    destination_name.as_ptr(),
+                                )
+                            };
+                            if result == 0 {
+                                Ok(())
+                            } else {
+                                Err(std::io::Error::last_os_error())
+                            }
                         }
-                        .map_err(|error| error),
                         Err(error) => Err(error),
                     }
                 }

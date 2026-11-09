@@ -418,6 +418,7 @@ fn stop_all_inner_cmd(
         st.stop_proxy();
         // 兜底：受管身份无法确认（应用重开后遗留的 daemon）时，委托官方 CLI
         // 按 data-dir 停止——daemon 自身校验数据目录锁，安全且不触碰真实实例。
+        #[cfg(windows)]
         if let Err(e) = &sandbox_res {
             if e.contains("managed launch 身份") {
                 match crate::runtime::science::cli_stop_sandbox_daemon() {
@@ -2152,9 +2153,7 @@ esac
                 handle,
                 state.clone(),
                 lifecycle.as_ref(),
-                None,
-                None,
-            );
+                None);
             let exact_error = result
                 .as_ref()
                 .is_err_and(|error| error.contains(expected_error));
@@ -2508,9 +2507,7 @@ esac
             handle.clone(),
             state.clone(),
             lifecycle.as_ref(),
-            None,
-            None,
-        );
+            None);
         let failure_surface = failed
             .as_ref()
             .err()
@@ -2966,7 +2963,7 @@ esac
             env::remove_var("CSSWITCH_TEST_MANAGED_LAUNCH_COMMIT_FAILURE");
         }
         let retry =
-            sandbox_session::one_click_login(handle, state.clone(), lifecycle.as_ref(), None, None);
+            sandbox_session::one_click_login(handle, state.clone(), lifecycle.as_ref(), None);
         let retry_started_once = retry
             .as_ref()
             .is_ok_and(|value| value["action"] == "started")
@@ -3265,9 +3262,7 @@ esac
             handle.clone(),
             state.clone(),
             lifecycle.as_ref(),
-            None,
-            None,
-        );
+            None);
         let candidate_pid = fs::read_to_string(&candidate_pid_log)
             .ok()
             .and_then(|pid| pid.trim().parse::<u32>().ok());
@@ -3472,9 +3467,7 @@ esac
             handle.clone(),
             state.clone(),
             lifecycle.as_ref(),
-            None,
-            None,
-        );
+            None);
         let candidate_pid = fs::read_to_string(&candidate_pid_log)
             .ok()
             .and_then(|pid| pid.trim().parse::<u32>().ok());
@@ -3744,9 +3737,7 @@ esac
             handle.clone(),
             state.clone(),
             lifecycle.as_ref(),
-            None,
-            None,
-        );
+            None);
         let observation = fs::read_to_string(&snapshot_observation).unwrap_or_default();
         let expected_observation = format!(
             "expected_prior_pid={prior_pid}\nexpected_receipt={}\nlistener=stopped\nprior_process=absent\nprior_receipt=absent\n",
@@ -3901,9 +3892,7 @@ esac
             lifecycle.as_ref(),
             &candidate.id,
             false,
-            None,
-            None,
-        )
+            None)
         .expect("profile switch snapshot failure must return structured recovery evidence");
         let restored_pid = listener_pid_if_unique(sandbox_port);
         let receipt_pid = fs::read(&receipt_path)
@@ -4075,9 +4064,7 @@ esac
             handle.clone(),
             state.clone(),
             lifecycle.as_ref(),
-            None,
-            None,
-        );
+            None);
         let publishes = fs::read_to_string(&gateway_publish_log)
             .unwrap_or_default()
             .lines()
@@ -4269,7 +4256,7 @@ esac
         );
 
         let started =
-            sandbox_session::one_click_login(handle, state.clone(), lifecycle.as_ref(), None, None);
+            sandbox_session::one_click_login(handle, state.clone(), lifecycle.as_ref(), None);
         let serve_count =
             fs::read_to_string(sandbox_home.join(".claude-science/fake-science/serve-count"));
         let committed = config::load_from(&config_dir).unwrap();
@@ -4410,9 +4397,7 @@ esac
             handle.clone(),
             state.clone(),
             lifecycle.as_ref(),
-            None,
-            None,
-        );
+            None);
         let cleanup_line = fs::read_to_string(&cleanup_log)
             .unwrap_or_default()
             .lines()
@@ -4543,9 +4528,7 @@ esac
             handle,
             second_state.clone(),
             lifecycle.as_ref(),
-            None,
-            None,
-        );
+            None);
         let pending_cleared = lock(&second_state).pending_authority_cleanup.is_empty();
         let residual_removed = !residual.exists();
         let neighbor_untouched = authority_tree(&neighbor) == neighbor_before;
@@ -4736,7 +4719,7 @@ esac
         });
 
         let result =
-            sandbox_session::one_click_login(handle, state.clone(), lifecycle.as_ref(), None, None);
+            sandbox_session::one_click_login(handle, state.clone(), lifecycle.as_ref(), None);
         let observation = config::test_pending_cleanup_lifecycle_observation();
         let zero_remove = observation
             .events
@@ -4916,9 +4899,7 @@ esac
             handle.clone(),
             state.clone(),
             lifecycle.as_ref(),
-            None,
-            None,
-        );
+            None);
         let observed = observation
             .lock()
             .unwrap_or_else(|error| error.into_inner())
@@ -4986,9 +4967,7 @@ esac
             handle,
             fresh_state.clone(),
             lifecycle.as_ref(),
-            None,
-            None,
-        );
+            None);
         let manifest_cleared = match fs::read(&manifest_path) {
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => true,
             Ok(bytes) => serde_json::from_slice::<serde_json::Value>(&bytes)
@@ -5107,7 +5086,7 @@ esac
             config::PendingCleanupPublishFault::Register,
         ));
         let result =
-            sandbox_session::one_click_login(handle, state.clone(), lifecycle.as_ref(), None, None);
+            sandbox_session::one_click_login(handle, state.clone(), lifecycle.as_ref(), None);
         let lifecycle_observation = config::test_pending_cleanup_lifecycle_observation();
         let residual = lifecycle_observation
             .attempted_register
@@ -5385,7 +5364,7 @@ esac
             proxy_port,
         );
         let result =
-            sandbox_session::one_click_login(handle, state.clone(), lifecycle.as_ref(), None, None);
+            sandbox_session::one_click_login(handle, state.clone(), lifecycle.as_ref(), None);
         let rejected_before_runtime = result.is_err()
             && lock(&state).proxy.is_none()
             && lock(&state).sandbox.is_none()
@@ -5500,7 +5479,7 @@ esac
         let _rollback_seam = sandbox_session::test_arm_rollback_diagnostic_canary(&canary);
         let _cleanup_lifecycle = config::test_arm_pending_cleanup_lifecycle(None);
         let result =
-            sandbox_session::one_click_login(handle, state.clone(), lifecycle.as_ref(), None, None);
+            sandbox_session::one_click_login(handle, state.clone(), lifecycle.as_ref(), None);
         let surface = match &result {
             Ok(value) => value.to_string(),
             Err(error) => error.clone(),
@@ -5676,9 +5655,7 @@ esac
             handle.clone(),
             state.clone(),
             lifecycle.as_ref(),
-            None,
-            None,
-        )
+            None)
         .expect("first one-click should start proxy and sandbox");
         assert_eq!(first["action"], "started");
         assert!(
@@ -5706,9 +5683,7 @@ esac
             handle.clone(),
             state.clone(),
             lifecycle.as_ref(),
-            None,
-            None,
-        )
+            None)
         .expect("second one-click should reuse running sandbox");
         assert_eq!(second["action"], "reopened");
         assert!(
@@ -5834,9 +5809,7 @@ esac
                 handle.clone(),
                 state.clone(),
                 lifecycle.as_ref(),
-                None,
-                None,
-            )
+                None)
             .expect("normal cold start should not re-probe or reconfigure");
             cold_start_ms.push(started_at.elapsed().as_millis());
             assert_eq!(restarted["action"], "started");
@@ -5894,9 +5867,7 @@ esac
             handle.clone(),
             state.clone(),
             lifecycle.as_ref(),
-            None,
-            None,
-        )
+            None)
         .expect("binary replacement should re-probe and reconcile once");
         assert_eq!(upgraded["action"], "started");
         assert_eq!(
@@ -6459,9 +6430,7 @@ esac
             handle.clone(),
             state.clone(),
             lifecycle.as_ref(),
-            None,
-            None,
-        )
+            None)
         .expect("first one-click should start proxy and sandbox");
         assert_eq!(first["action"], "started");
         assert!(
@@ -6512,9 +6481,7 @@ esac
             handle.clone(),
             state.clone(),
             lifecycle.as_ref(),
-            None,
-            None,
-        )
+            None)
         .expect("one-click should manually recover a dead proxy");
         assert_eq!(recovered["action"], "reopened");
         assert_eq!(recovered["stage"], "complete");
@@ -6719,9 +6686,7 @@ esac
             handle.clone(),
             state.clone(),
             lifecycle.as_ref(),
-            None,
-            None,
-        );
+            None);
         let failure_surface = failed
             .as_ref()
             .err()
@@ -6756,7 +6721,7 @@ esac
 
         fs::remove_file(&failure_control).unwrap();
         let retry =
-            sandbox_session::one_click_login(handle, state.clone(), lifecycle.as_ref(), None, None);
+            sandbox_session::one_click_login(handle, state.clone(), lifecycle.as_ref(), None);
         let retry_surface = retry
             .as_ref()
             .map(serde_json::Value::to_string)

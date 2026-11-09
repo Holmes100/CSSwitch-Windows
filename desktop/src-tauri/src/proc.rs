@@ -551,6 +551,7 @@ fn hex(bytes: &[u8]) -> String {
 mod tests {
     use super::*;
     
+    use std::process::Command;
     use std::sync::Arc;
     use std::thread;
 

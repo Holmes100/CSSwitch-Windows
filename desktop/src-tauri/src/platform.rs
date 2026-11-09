@@ -369,6 +369,7 @@ pub fn no_follow_flags() -> u32 {
 pub fn open_dir(path: &Path) -> io::Result<File> {
     #[cfg(unix)]
     {
+        use std::os::unix::fs::OpenOptionsExt;
         let file = OpenOptions::new()
             .read(true)
             .custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW | libc::O_CLOEXEC)

@@ -1014,6 +1014,7 @@ fn login_intact_guarded(
 
 #[cfg(test)]
 mod tests {
+    use std::os::unix::fs::PermissionsExt;
     use super::*;
     use std::sync::atomic::{AtomicU32, Ordering};
 

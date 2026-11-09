@@ -12,6 +12,9 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use serde_json::{json, Map, Value};
 
 use crate::auth::{strip_path_secret, AuthResult};
+
+#[cfg(unix)]
+use std::os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt};
 use crate::config::GatewayConfig;
 use crate::{
     anthropic_compat::{self, AnthropicMetadata, KimiServerToolFilter},
@@ -1496,31 +1499,6 @@ fn bridge_request_internal_failed() -> Value {
         "directory_commit":null,
         "restart_required":false
     })
-}
-
-#[cfg(unix)]
-fn acquire_bridge_host_lock(bridge: &std::path::Path) -> Result<std::fs::File, String> {
-    use std::os::fd::AsRawFd;
-
-    let lock_path = bridge.join(".csswitch-host.lock");
-    let file = std::fs::OpenOptions::new()
-        .read(true)
-        .write(true)
-        .create(true)
-        .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
-        .open(&lock_path)
-        .map_err(|error| error.to_string())?;
-    let metadata = file.metadata().map_err(|error| error.to_string())?;
-    if !metadata.is_file()
-        || metadata.uid() != unsafe { libc::geteuid() }
-        || metadata.permissions().mode() & 0o077 != 0
-    {
-        return Err("refusing unsafe Skill bridge host lock".into());
-    }
-    if unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } != 0 {
-        return Err("Skill bridge already has an active host".into());
-    }
-    Ok(file)
 }
 
 #[cfg(windows)]

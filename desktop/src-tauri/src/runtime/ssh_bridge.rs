@@ -605,6 +605,7 @@ pub(crate) fn validate_science_ssh_bridge(sandbox_home: &Path) -> Result<Vec<Str
 
 #[cfg(test)]
 mod tests {
+    use std::os::unix::fs::PermissionsExt;
     use super::*;
 
     fn tmpdir(label: &str) -> PathBuf {
