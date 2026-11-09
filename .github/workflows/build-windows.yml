@@ -18,6 +18,8 @@ jobs:
         run: Get-Item desktop/src-tauri/target/release/desktop.exe | Select-Object Length,VersionInfo
       - uses: actions/upload-artifact@v4
         with:
-          name: desktop-windows-x64
-          path: desktop/src-tauri/target/release/desktop.exe
+          name: csswitch-windows-x64
+          path: |
+            desktop/src-tauri/target/release/desktop.exe
+            desktop/src-tauri/binaries/csswitch-gateway-x86_64-pc-windows-msvc.exe
           if-no-files-found: error
