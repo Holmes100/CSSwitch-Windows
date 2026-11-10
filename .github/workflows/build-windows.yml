@@ -4,22 +4,37 @@ on:
   push:
     branches: [main]
     paths: ['.github/workflows/build-windows.yml']
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: Build desktop.exe (含 gateway sidecar)
-        run: cargo build --release --manifest-path desktop/src-tauri/Cargo.toml
+      - name: Build NSIS 安装包（desktop.exe + gateway sidecar 自动打入）
+        shell: pwsh
+        run: |
+          Set-Location desktop
+          npx -y @tauri-apps/cli@^2 build --bundles nsis
         env:
           CARGO_BUILD_JOBS: "4"
       - name: 校验产物存在
-        run: Get-Item desktop/src-tauri/target/release/desktop.exe | Select-Object Length,VersionInfo
+        shell: pwsh
+        run: |
+          Get-Item desktop/src-tauri/target/release/desktop.exe | Select-Object Length,VersionInfo
+          Get-ChildItem desktop/src-tauri/target/release/bundle/nsis/*.exe | Select-Object Name,Length
       - uses: actions/upload-artifact@v4
         with:
           name: csswitch-windows-x64
           path: |
             desktop/src-tauri/target/release/desktop.exe
             desktop/src-tauri/binaries/csswitch-gateway-x86_64-pc-windows-msvc.exe
+            desktop/src-tauri/target/release/bundle/nsis/*-setup.exe
           if-no-files-found: error
+      - name: 上传安装包到 Release v0.8.4
+        shell: pwsh
+        run: |
+          gh release upload v0.8.4 (Get-Item desktop/src-tauri/target/release/bundle/nsis/*-setup.exe).FullName --clobber --repo Holmes100/CSSwitch-Windows
+        env:
+          GH_TOKEN: ${{ github.token }}
