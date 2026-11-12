@@ -379,6 +379,17 @@ fn anthropic_to_openai_with_model(
                         .ok_or("OpenAI Chat reasoning signature is missing")?;
                     reasoning = Some((thinking, signature));
                 }
+                Some("image") => {
+                    // OpenAI Chat 图片转换未实现：占位文本降级（保留消息非空
+                    // 与历史顺序），避免 400 让整段对话无法使用。真机场景：
+                    // 用户贴图后对话在 openai_chat 上游持续 400。
+                    text_parts.push("[图片已省略]");
+                }
+                Some("image") => {
+                    // OpenAI Chat 图片转换未实现：占位文本降级（保留消息非空
+                    // 与历史顺序），避免 400 让整段对话无法使用（真机实测）。
+                    text_parts.push("[图片已省略]");
+                }
                 Some("tool_use") => {
                     if role != "assistant" || tool_bindings.len() >= MAX_TOOL_CALLS {
                         return Err("OpenAI Chat tool history is invalid".into());
@@ -434,8 +445,12 @@ fn anthropic_to_openai_with_model(
                         "content": tool_result_content(block.get("content"))?
                     }));
                 }
-                Some(_) => return Err("OpenAI Chat history content block is unsupported".into()),
-                None => return Err("OpenAI Chat history content block type is missing".into()),
+                // Science 0.1.72+ 的历史可能包含 OpenAI Chat 不支持的块类型
+                // （服务端 server_tool_use / web_search_tool_result 等）。这些块
+                // 没有 OpenAI 侧的 tool_use 配对语义，跳过即可——400 拒绝会让
+                // 整段对话历史无法使用（真机 400 实测：Agent 用过内置
+                // web_search 后，openai_chat 上游一律 400）。
+                _ => {}
             }
         }
         let joined_text = text_parts.join("");
@@ -1284,12 +1299,6 @@ mod tests {
                         "name": "tool",
                         "input": {},
                     }],
-                }],
-            }),
-            json!({
-                "messages": [{
-                    "role": "user",
-                    "content": [{"type": "image", "source": {}}],
                 }],
             }),
             json!({
